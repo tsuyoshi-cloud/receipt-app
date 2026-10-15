@@ -1,4 +1,72 @@
-const cameraInput = document.getElementById('cameraInput');
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <!-- スマホ対応（レスポンシブ）のための必須設定 -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>レシート入力アプリ</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 20px;
+      text-align: center;
+      background-color: #f8f9fa;
+    }
+    /* 標準のファイル選択ボタンはダサいので隠す */
+    input[type="file"] {
+      display: none;
+    }
+    /* labelをボタン風にデザインする */
+    .btn {
+      display: inline-block;
+      padding: 15px 30px;
+      font-size: 18px;
+      font-weight: bold;
+      color: white;
+      background-color: #007bff;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      cursor: pointer;
+      margin-bottom: 20px;
+    }
+    .btn-success {
+      background-color: #28a745;
+    }
+    /* プレビュー画像のスタイル */
+    #preview {
+      max-width: 100%;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      display: none; /* 最初は隠しておく */
+      margin: 0 auto;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>レシート撮影</h2>
+
+  <!-- inputを隠し、labelをクリックさせることでカメラを起動 -->
+  <label for="cameraInput" class="btn">
+    📷 カメラを起動
+  </label>
+  <!-- capture="environment" で背面のメインカメラを直接起動 -->
+  <input type="file" id="cameraInput" accept="image/*" capture="environment">
+
+  <div>
+    <!-- 撮影した画像を表示する場所 -->
+    <img id="preview" alt="レシートのプレビュー">
+  </div>
+
+  <!-- 次のステップ：Geminiへ送るボタン（最初は隠しておく） -->
+  <div style="margin-top: 20px;">
+    <button id="sendBtn" class="btn btn-success" style="display: none;">
+      ✨ このレシートを読み取る
+    </button>
+  </div>
+
+  <script>
+    const cameraInput = document.getElementById('cameraInput');
     const preview = document.getElementById('preview');
     const sendBtn = document.getElementById('sendBtn');
     
@@ -123,3 +191,7 @@ const cameraInput = document.getElementById('cameraInput');
         }
       }
     });
+  </script>
+
+</body>
+</html>
