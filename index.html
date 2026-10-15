@@ -1,81 +1,12 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-  <meta charset="UTF-8">
-  <!-- スマホ対応（レスポンシブ）のための必須設定 -->
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>レシート入力アプリ</title>
-  <style>
-    body {
-      font-family: sans-serif;
-      padding: 20px;
-      text-align: center;
-      background-color: #f8f9fa;
-    }
-    /* 標準のファイル選択ボタンはダサいので隠す */
-    input[type="file"] {
-      display: none;
-    }
-    /* labelをボタン風にデザインする */
-    .btn {
-      display: inline-block;
-      padding: 15px 30px;
-      font-size: 18px;
-      font-weight: bold;
-      color: white;
-      background-color: #007bff;
-      border-radius: 8px;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-      cursor: pointer;
-      margin-bottom: 20px;
-    }
-    .btn-success {
-      background-color: #28a745;
-    }
-    /* プレビュー画像のスタイル */
-    #preview {
-      max-width: 100%;
-      border-radius: 8px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-      display: none; /* 最初は隠しておく */
-      margin: 0 auto;
-    }
-  </style>
-</head>
-<body>
-
-  <h2>レシート撮影</h2>
-
-  <!-- inputを隠し、labelをクリックさせることでカメラを起動 -->
-  <label for="cameraInput" class="btn">
-    📷 カメラを起動
-  </label>
-  <!-- capture="environment" で背面のメインカメラを直接起動 -->
-  <input type="file" id="cameraInput" accept="image/*" capture="environment">
-
-  <div>
-    <!-- 撮影した画像を表示する場所 -->
-    <img id="preview" alt="レシートのプレビュー">
-  </div>
-
-  <!-- 次のステップ：Geminiへ送るボタン（最初は隠しておく） -->
-  <div style="margin-top: 20px;">
-    <button id="sendBtn" class="btn btn-success" style="display: none;">
-      ✨ このレシートを読み取る
-    </button>
-  </div>
-
-  <script>
 const cameraInput = document.getElementById('cameraInput');
     const preview = document.getElementById('preview');
     const sendBtn = document.getElementById('sendBtn');
     
-    // ★前回GASで発行したウェブアプリのURLをここに貼り付けてください
+    // ★ご自身のGASのURLに書き換えてください
     const GAS_URL = 'https://script.google.com/macros/s/AKfycbz9EFDt4li-cLJ8Om7VW8tW7vaSMUQIeqUDCq68b_HhuGdGDbK18K29SlKyo4LFgTUd/exec';
     
     let base64Image = ''; 
 
-    // カメラで撮影された時の処理
     cameraInput.addEventListener('change', (event) => {
       const file = event.target.files[0];
       if (!file) return;
@@ -89,12 +20,10 @@ const cameraInput = document.getElementById('cameraInput');
       reader.readAsDataURL(file);
     });
 
-    // 「このレシートを読み取る」ボタンを押した時の処理
     sendBtn.addEventListener('click', async () => {
-      // 1. APIキーの確認（初回のみ入力し、スマホに保存）
       let apiKey = localStorage.getItem('gemini_api_key');
       if (!apiKey) {
-        apiKey = prompt('Gemini APIキーを入力してください\n（※初回のみ。データはスマホ内に保存されます）');
+        apiKey = prompt('Gemini APIキーを入力してください');
         if (!apiKey) return;
         localStorage.setItem('gemini_api_key', apiKey);
       }
@@ -103,10 +32,11 @@ const cameraInput = document.getElementById('cameraInput');
       sendBtn.disabled = true;
 
       try {
-        // 画像データから "data:image/jpeg;base64," の部分を取り除く
+        // 【修正点1】画像の形式（MIMEタイプ）を自動判定して抽出する
+        const mimeTypeMatch = base64Image.match(/data:([a-zA-Z0-9]+\/[a-zA-Z0-9-.+]+).*,/);
+        const mimeType = mimeTypeMatch ? mimeTypeMatch[1] : "image/jpeg";
         const base64Data = base64Image.split(',')[1];
 
-        // 2. Gemini APIへの指示（プロンプト）
         const promptText = `このレシート画像から以下の情報を抽出し、指定のJSON形式のみで出力してください。
 マークダウン（\`\`\`json など）は絶対に含めず、{ から始まる純粋なJSON文字列のみを返してください。
 ・購入日（YYYY/MM/DD形式）
@@ -129,12 +59,11 @@ const cameraInput = document.getElementById('cameraInput');
           contents: [{
             parts: [
               { text: promptText },
-              { inline_data: { mime_type: "image/jpeg", data: base64Data } }
+              { inline_data: { mime_type: mimeType, data: base64Data } }
             ]
           }]
         };
 
-        // 3. Gemini API (高速な 1.5 Flashモデル) を呼び出し
         const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -143,21 +72,30 @@ const cameraInput = document.getElementById('cameraInput');
 
         const geminiData = await geminiRes.json();
         
-        if (!geminiData.candidates) {
-          throw new Error('AIの解析に失敗しました。APIキーが間違っている可能性があります。');
+        // 【修正点2】Gemini APIからの「本当のエラー原因」を画面に出す
+        if (!geminiRes.ok) {
+           throw new Error(`Google APIエラー (${geminiRes.status}):\n${geminiData.error?.message || '不明なエラー'}`);
         }
 
-        // 解析結果のテキストを取得し、JSONとして読み込む
+        if (!geminiData.candidates) {
+          throw new Error('AIからの応答データが空でした。');
+        }
+
         let responseText = geminiData.candidates[0].content.parts[0].text;
-        responseText = responseText.replace(/```json/g, '').replace(/```/g, '').trim(); // 保険のための処理
-        const parsedJson = JSON.parse(responseText);
+        responseText = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
+        
+        let parsedJson;
+        try {
+            parsedJson = JSON.parse(responseText);
+        } catch (e) {
+            throw new Error(`AIの出力形式エラー。\n出力内容: ${responseText.substring(0,50)}...`);
+        }
 
         sendBtn.innerText = 'スプレッドシートに書き込み中...';
 
-        // 4. GAS（スプレッドシート）へデータを送信
         const gasRes = await fetch(GAS_URL, {
           method: 'POST',
-          headers: { 'Content-Type': 'text/plain' }, // ブラウザの通信制限（CORS）を回避するための設定
+          headers: { 'Content-Type': 'text/plain' },
           body: JSON.stringify(parsedJson)
         });
 
@@ -165,27 +103,23 @@ const cameraInput = document.getElementById('cameraInput');
 
         if (gasResult.status === 'success') {
           alert('家計簿に記録しました！');
-          // 画面を初期状態に戻す
           preview.style.display = 'none';
           sendBtn.style.display = 'none';
           sendBtn.innerText = '✨ このレシートを読み取る';
           sendBtn.disabled = false;
         } else {
-          throw new Error(gasResult.message);
+          throw new Error('GAS書き込みエラー: ' + gasResult.message);
         }
 
       } catch (error) {
-        alert('エラーが発生しました: ' + error.message);
+        // エラー内容をそのままアラートで表示する
+        alert('【エラー詳細】\n' + error.message);
         sendBtn.innerText = '✨ このレシートを読み取る';
         sendBtn.disabled = false;
         
-        // 認証エラーの場合は次回入力できるようにキーをリセット
-        if (error.message.includes('APIキー')) {
+        // APIキー無効(400番台エラー)の場合のみキーを消去する
+        if (error.message.includes('(400)')) {
            localStorage.removeItem('gemini_api_key');
         }
       }
     });
-  </script>
-
-</body>
-</html>
