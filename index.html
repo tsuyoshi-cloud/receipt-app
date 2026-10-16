@@ -3,96 +3,400 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>レシート入力アプリ</title>
+  <title>インコ家計簿アプリ</title>
   <style>
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      padding: 20px;
-      text-align: center;
-      background-color: #f8f9fa;
+      margin: 0;
+      padding: 0;
+      background-color: #f0f7ff;
       color: #333;
     }
+    header {
+      background-color: #2b8cee;
+      color: white;
+      padding: 15px;
+      text-align: center;
+      font-size: 20px;
+      font-weight: bold;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    /* タブメニュー */
+    .tabs {
+      display: flex;
+      background: white;
+      border-bottom: 1px solid #ddd;
+    }
+    .tab-btn {
+      flex: 1;
+      padding: 12px 5px;
+      border: none;
+      background: none;
+      font-size: 14px;
+      font-weight: bold;
+      color: #666;
+      cursor: pointer;
+      border-bottom: 3px solid transparent;
+    }
+    .tab-btn.active {
+      color: #2b8cee;
+      border-bottom: 3px solid #2b8cee;
+      background-color: #f8fbff;
+    }
+    .container {
+      padding: 20px;
+      max-width: 500px;
+      margin: 0 auto;
+      text-align: center;
+    }
+    .tab-content {
+      display: none;
+    }
+    .tab-content.active {
+      display: block;
+    }
+    /* ボタン・入力系 */
     input[type="file"] {
       display: none;
     }
     .btn {
       display: inline-block;
-      width: 80%;
-      max-width: 300px;
+      width: 90%;
+      max-width: 320px;
       padding: 15px 20px;
-      font-size: 18px;
+      font-size: 17px;
       font-weight: bold;
       color: white;
-      background-color: #007bff;
+      background-color: #2b8cee;
       border: none;
-      border-radius: 8px;
+      border-radius: 10px;
       box-shadow: 0 4px 6px rgba(0,0,0,0.1);
       cursor: pointer;
-      margin-bottom: 20px;
+      margin-bottom: 15px;
       box-sizing: border-box;
     }
     .btn-success {
       background-color: #28a745;
     }
     .btn:disabled {
-      background-color: #6c757d;
+      background-color: #999;
       cursor: not-allowed;
     }
     #preview {
       max-width: 100%;
-      max-height: 400px;
+      max-height: 350px;
       border-radius: 8px;
       box-shadow: 0 2px 4px rgba(0,0,0,0.1);
       display: none;
-      margin: 0 auto 20px auto;
+      margin: 0 auto 15px auto;
     }
-    #statusText {
+    .status-text {
       font-size: 14px;
       color: #555;
-      margin-bottom: 15px;
+      margin: 10px 0;
       min-height: 20px;
     }
-    .reset-area {
-      margin-top: 40px;
-      border-top: 1px solid #ddd;
-      padding-top: 20px;
+
+    /* 月選択バー */
+    .month-selector {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 20px;
+      background: white;
+      padding: 12px;
+      border-radius: 10px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    }
+    .month-selector input[type="month"] {
+      font-size: 16px;
+      padding: 8px 12px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+    .btn-small {
+      padding: 8px 16px;
+      font-size: 14px;
+      font-weight: bold;
+      color: white;
+      background-color: #2b8cee;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    /* 青いセキセイインコ＆吹き出しエリア */
+    .parakeet-box {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #ffffff;
+      border: 2px solid #bae0ff;
+      border-radius: 14px;
+      padding: 15px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 10px rgba(43, 140, 238, 0.08);
+    }
+    .parakeet-svg {
+      width: 85px;
+      height: 85px;
+      flex-shrink: 0;
+    }
+    .speech-bubble {
+      position: relative;
+      background: #e6f4ff;
+      border: 2px solid #2b8cee;
+      border-radius: 12px;
+      padding: 12px 15px;
+      margin-left: 15px;
+      text-align: left;
+      font-weight: bold;
+      color: #0050b3;
+      font-size: 15px;
+      line-height: 1.4;
+      flex: 1;
+    }
+    .speech-bubble::before {
+      content: "";
+      position: absolute;
+      left: -12px;
+      top: 50%;
+      transform: translateY(-50%);
+      border-width: 10px 12px 10px 0;
+      border-style: solid;
+      border-color: transparent #2b8cee transparent transparent;
+    }
+    .speech-bubble::after {
+      content: "";
+      position: absolute;
+      left: -9px;
+      top: 50%;
+      transform: translateY(-50%);
+      border-width: 8px 10px 8px 0;
+      border-style: solid;
+      border-color: transparent #e6f4ff transparent transparent;
+    }
+
+    /* カテゴリ別内訳カード */
+    .category-card {
+      background: white;
+      border-radius: 10px;
+      padding: 14px 16px;
+      margin-bottom: 12px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+      text-align: left;
+    }
+    .category-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .category-name {
+      font-weight: bold;
+      font-size: 16px;
+    }
+    .category-amount {
+      font-size: 15px;
+      font-weight: bold;
+    }
+    .progress-bg {
+      width: 100%;
+      height: 10px;
+      background-color: #eee;
+      border-radius: 5px;
+      overflow: hidden;
+      margin-bottom: 8px;
+    }
+    .progress-bar {
+      height: 100%;
+      background-color: #2b8cee;
+      border-radius: 5px;
+      transition: width 0.3s ease;
+    }
+    .progress-bar.over {
+      background-color: #ff4d4f;
+    }
+    /* 各カテゴリのミニインコ吹き出し */
+    .mini-parakeet-comment {
+      display: flex;
+      align-items: center;
+      margin-top: 6px;
+    }
+    .mini-bubble {
+      position: relative;
+      display: inline-block;
+      background: #f0f9ff;
+      border: 1.5px solid #36a3f7;
+      color: #0066cc;
+      font-size: 13px;
+      font-weight: bold;
+      padding: 4px 10px;
+      border-radius: 12px;
+      margin-left: 8px;
+    }
+    .mini-bubble.over {
+      background: #fff2f0;
+      border-color: #ffccc7;
+      color: #cf1322;
+    }
+
+    /* 予算入力フォーム */
+    .budget-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: white;
+      padding: 12px 16px;
+      margin-bottom: 10px;
+      border-radius: 8px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    .budget-row label {
+      font-weight: bold;
+      font-size: 16px;
+    }
+    .budget-row input {
+      width: 120px;
+      padding: 8px;
+      font-size: 16px;
+      text-align: right;
+      border: 1px solid #ccc;
+      border-radius: 6px;
     }
     .btn-reset {
       background: none;
       border: 1px solid #999;
       color: #666;
       padding: 8px 16px;
-      border-radius: 4px;
+      border-radius: 6px;
       font-size: 14px;
       cursor: pointer;
+      margin-top: 20px;
     }
   </style>
 </head>
 <body>
 
-  <h2>🧾 レシート家計簿</h2>
+  <header>🐦 インコ家計簿</header>
 
-  <label for="cameraInput" class="btn">
-    📷 カメラを起動
-  </label>
-  <input type="file" id="cameraInput" accept="image/*" capture="environment">
-
-  <div>
-    <img id="preview" alt="レシートのプレビュー">
+  <!-- タブ切り替えボタン -->
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('tab-camera', this)">📷 レシート登録</button>
+    <button class="tab-btn" onclick="switchTab('tab-summary', this)">📊 家計簿内訳</button>
+    <button class="tab-btn" onclick="switchTab('tab-budget', this)">⚙️ 予算・設定</button>
   </div>
 
-  <div id="statusText"></div>
+  <div class="container">
 
-  <div>
-    <button id="sendBtn" class="btn btn-success" style="display: none;">
-      ✨ このレシートを読み取る
-    </button>
-  </div>
+    <!-- ==================== タブ1：レシート登録 ==================== -->
+    <div id="tab-camera" class="tab-content active">
+      <p style="font-size:14px; color:#666;">レシートを撮影するとAIが自動で仕分けします</p>
+      <label for="cameraInput" class="btn">
+        📷 カメラを起動
+      </label>
+      <input type="file" id="cameraInput" accept="image/*" capture="environment">
 
-  <div class="reset-area">
-    <button id="resetKeyBtn" class="btn-reset">
-      🔑 APIキーを再設定する
-    </button>
+      <div>
+        <img id="preview" alt="レシートのプレビュー">
+      </div>
+
+      <div id="statusText" class="status-text"></div>
+
+      <div>
+        <button id="sendBtn" class="btn btn-success" style="display: none;">
+          ✨ このレシートを読み取る
+        </button>
+      </div>
+    </div>
+
+    <!-- ==================== タブ2：家計簿内訳 ==================== -->
+    <div id="tab-summary" class="tab-content">
+      <div class="month-selector">
+        <input type="month" id="monthPicker">
+        <button class="btn-small" id="loadSummaryBtn">表示</button>
+      </div>
+
+      <div id="summaryStatus" class="status-text"></div>
+
+      <!-- 青いセキセイインコのイラスト＆吹き出し -->
+      <div class="parakeet-box" id="parakeetBox" style="display:none;">
+        <!-- 青いセキセイインコのSVGイラスト -->
+        <svg class="parakeet-svg" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+          <!-- 尾羽 -->
+          <path d="M40 95 L25 118 L48 105 Z" fill="#0050b3"/>
+          <!-- 体（青い羽毛） -->
+          <ellipse cx="62" cy="72" rx="28" ry="34" fill="#36a3f7"/>
+          <!-- お腹の明るい水色 -->
+          <ellipse cx="66" cy="76" rx="20" ry="26" fill="#69c0ff"/>
+          <!-- 翼 -->
+          <path d="M42 55 C30 70, 38 92, 55 92 C48 78, 52 62, 42 55 Z" fill="#1890ff" stroke="#096dd9" stroke-width="2"/>
+          <!-- 頭（白い顔＋青い頭頂部） -->
+          <circle cx="62" cy="38" r="24" fill="#ffffff"/>
+          <path d="M38 35 C38 15, 86 15, 86 35 C75 26, 50 26, 38 35 Z" fill="#36a3f7"/>
+          <!-- セキセイインコ特有の頬の青いチークと黒いポッチ -->
+          <ellipse cx="48" cy="46" rx="5" ry="7" fill="#1890ff"/>
+          <ellipse cx="78" cy="46" rx="5" ry="7" fill="#1890ff"/>
+          <circle cx="53" cy="52" r="2" fill="#222"/>
+          <circle cx="59" cy="54" r="2" fill="#222"/>
+          <circle cx="73" cy="52" r="2" fill="#222"/>
+          <!-- 目（キラキラ） -->
+          <circle cx="51" cy="36" r="4.5" fill="#111"/>
+          <circle cx="49.5" cy="34.5" r="1.5" fill="#fff"/>
+          <circle cx="75" cy="36" r="4.5" fill="#111"/>
+          <circle cx="73.5" cy="34.5" r="1.5" fill="#fff"/>
+          <!-- ろう膜（鼻）とくちばし -->
+          <ellipse cx="63" cy="36" rx="5" ry="2.5" fill="#69c0ff"/>
+          <path d="M58 38 Q63 50 68 38 Z" fill="#ffd666" stroke="#d48806" stroke-width="1"/>
+          <!-- 足 -->
+          <path d="M52 104 L48 112 M52 104 L54 112" stroke="#ff85c0" stroke-width="3" stroke-linecap="round"/>
+          <path d="M72 104 L68 112 M72 104 L74 112" stroke="#ff85c0" stroke-width="3" stroke-linecap="round"/>
+        </svg>
+
+        <div class="speech-bubble" id="mainParakeetSpeech">
+          月を選んで「表示」を押してねピヨ！
+        </div>
+      </div>
+
+      <!-- カテゴリ別の集計リスト描画エリア -->
+      <div id="categoryList"></div>
+    </div>
+
+    <!-- ==================== タブ3：予算・設定 ==================== -->
+    <div id="tab-budget" class="tab-content">
+      <p style="font-size:14px; color:#666;">1ヶ月あたりのカテゴリ別予算（円）を設定します</p>
+      
+      <div class="budget-row">
+        <label>🍎 食費</label>
+        <input type="number" id="budget-食費" value="30000" step="1000">
+      </div>
+      <div class="budget-row">
+        <label>🧻 日用品</label>
+        <input type="number" id="budget-日用品" value="10000" step="1000">
+      </div>
+      <div class="budget-row">
+        <label>🍽️ 外食</label>
+        <input type="number" id="budget-外食" value="10000" step="1000">
+      </div>
+      <div class="budget-row">
+        <label>🎮 娯楽費</label>
+        <input type="number" id="budget-娯楽費" value="10000" step="1000">
+      </div>
+      <div class="budget-row">
+        <label>📦 その他</label>
+        <input type="number" id="budget-その他" value="5000" step="1000">
+      </div>
+
+      <div id="budgetStatus" class="status-text"></div>
+
+      <button class="btn btn-success" id="saveBudgetBtn">💾 予算を保存する</button>
+
+      <div style="border-top:1px solid #ddd; margin-top:25px; padding-top:10px;">
+        <button id="resetKeyBtn" class="btn-reset">🔑 Gemini APIキーを再設定する</button>
+      </div>
+    </div>
+
   </div>
 
   <script>
@@ -100,36 +404,73 @@
     // ★書き換え箇所1：ご自身のGASのウェブアプリURLに書き換えてください
     const GAS_URL = 'https://script.google.com/macros/s/AKfycbz9EFDt4li-cLJ8Om7VW8tW7vaSMUQIeqUDCq68b_HhuGdGDbK18K29SlKyo4LFgTUd/exec';
 
-    // ★書き換え箇所2：使用するモデルの優先順位リスト
-    // 1番目が混雑(503)している場合、自動的に2番目、3番目のモデルへ切り替わります。
-    // モデル一覧で確認できた他のモデル名があれば、2番目以降に並べておくとさらに安定します。
+    // ★書き換え箇所2：使用するモデルの優先順位リスト（gemini-3.5-flashをメインに設定）
     const GEMINI_MODELS = [
-      'gemini-2.5-flash',
-      'gemini-2.5-pro',
       'gemini-3.5-flash',
-      'gemini-3.6-flash',
-      'gemini-3.7-flash',
-      'gemini-3.8-flash',
-      'gemini-4-argon'
+      'gemini-2.5-flash',
+      'gemini-2.0-flash'
     ];
     // ====================================================================
 
+    const CATEGORIES = ['食費', '日用品', '外食', '娯楽費', 'その他'];
+
+    // 小さな青いセキセイインコのアイコンSVG（カテゴリ別コメント用）
+    const MINI_PARAKEET_SVG = `
+      <svg width="28" height="28" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0;">
+        <circle cx="60" cy="60" r="54" fill="#e6f4ff" stroke="#36a3f7" stroke-width="4"/>
+        <circle cx="60" cy="55" r="34" fill="#ffffff"/>
+        <path d="M26 50 C26 15, 94 15, 94 50 C78 36, 42 36, 26 50 Z" fill="#36a3f7"/>
+        <ellipse cx="38" cy="65" rx="7" ry="9" fill="#1890ff"/>
+        <ellipse cx="82" cy="65" rx="7" ry="9" fill="#1890ff"/>
+        <circle cx="44" cy="52" r="6" fill="#111"/>
+        <circle cx="42" cy="50" r="2" fill="#fff"/>
+        <circle cx="76" cy="52" r="6" fill="#111"/>
+        <circle cx="74" cy="50" r="2" fill="#fff"/>
+        <ellipse cx="60" cy="52" rx="7" ry="3.5" fill="#69c0ff"/>
+        <path d="M53 55 Q60 72 67 55 Z" fill="#ffd666" stroke="#d48806" stroke-width="1.5"/>
+      </svg>
+    `;
+
+    // 現在の年月（YYYY-MM）を取得する関数
+    function getCurrentYearMonth() {
+      const now = new Date();
+      const y = now.getFullYear();
+      const m = ('0' + (now.getMonth() + 1)).slice(-2);
+      return `${y}-${m}`;
+    }
+
+    // 初期表示時に当月をセット
+    const monthPicker = document.getElementById('monthPicker');
+    monthPicker.value = getCurrentYearMonth();
+
+    // タブ切り替え処理
+    function switchTab(tabId, btnElement) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+      document.getElementById(tabId).classList.add('active');
+      btnElement.classList.add('active');
+
+      // 内訳タブを開いたときに自動集計
+      if (tabId === 'tab-summary') {
+        loadMonthlySummary();
+      }
+    }
+
+    // ==================== 1. レシート撮影・送信処理 ====================
     const cameraInput = document.getElementById('cameraInput');
     const preview = document.getElementById('preview');
     const sendBtn = document.getElementById('sendBtn');
     const statusText = document.getElementById('statusText');
     const resetKeyBtn = document.getElementById('resetKeyBtn');
-    
-    let compressedBase64Data = ''; 
+    let compressedBase64Data = '';
 
-    // APIキーの再設定処理
     resetKeyBtn.addEventListener('click', () => {
       const currentKey = localStorage.getItem('gemini_api_key') || '';
-      const newKey = prompt('新しいGemini APIキーを入力してください\n（空欄にしてOKを押すと削除されます）', currentKey);
+      const newKey = prompt('新しいGemini APIキーを入力してください\n（空欄でOKを押すと削除されます）', currentKey);
       if (newKey !== null) {
         if (newKey.trim() === '') {
           localStorage.removeItem('gemini_api_key');
-          alert('保存されていたAPIキーを削除しました。');
+          alert('APIキーを削除しました。');
         } else {
           localStorage.setItem('gemini_api_key', newKey.trim());
           alert('新しいAPIキーを保存しました。');
@@ -137,7 +478,6 @@
       }
     });
 
-    // 画像を縮小・軽量化する関数（長辺を最大1200pxにリサイズ）
     function compressImage(file, callback) {
       const reader = new FileReader();
       reader.onload = (e) => {
@@ -147,7 +487,6 @@
           const MAX_SIZE = 1200;
           let width = img.width;
           let height = img.height;
-
           if (width > height && width > MAX_SIZE) {
             height *= MAX_SIZE / width;
             width = MAX_SIZE;
@@ -155,26 +494,20 @@
             width *= MAX_SIZE / height;
             height = MAX_SIZE;
           }
-
           canvas.width = width;
           canvas.height = height;
           const ctx = canvas.getContext('2d');
           ctx.drawImage(img, 0, 0, width, height);
-
-          // JPEG形式（画質80%）に圧縮してデータ量を大幅削減
-          const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
-          callback(dataUrl);
+          callback(canvas.toDataURL('image/jpeg', 0.8));
         };
         img.src = e.target.result;
       };
       reader.readAsDataURL(file);
     }
 
-    // カメラで撮影された時の処理
     cameraInput.addEventListener('change', (event) => {
       const file = event.target.files[0];
       if (!file) return;
-
       statusText.innerText = '画像を最適化中...';
       compressImage(file, (dataUrl) => {
         preview.src = dataUrl;
@@ -185,49 +518,34 @@
       });
     });
 
-    // 指定ミリ秒待機する関数
     const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-    // 503エラー時にリトライ＆別モデルへ自動切り替えしてGeminiを呼び出す関数
     async function callGeminiWithFallback(apiKey, requestBody) {
       let lastError = null;
-
       for (const model of GEMINI_MODELS) {
-        // 各モデルにつき最大2回まで試行
         for (let attempt = 1; attempt <= 2; attempt++) {
-          statusText.innerText = `AI解析中... (モデル: ${model}${attempt > 1 ? ' 再試行中' : ''})`;
-          
+          statusText.innerText = `AI解析中... (${model}${attempt > 1 ? ' 再試行中' : ''})`;
           const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(requestBody)
           });
-
           const data = await res.json();
-
-          if (res.ok) {
-            return data; // 成功したらデータを返す
-          }
-
+          if (res.ok) return data;
           lastError = `Google APIエラー (${res.status}):\n${data.error?.message || '不明なエラー'}`;
-
-          // 503（サーバー混雑）または 429（リクエスト制限）の場合は2秒待ってリトライ
           if (res.status === 503 || res.status === 429) {
             await sleep(2000);
             continue;
           } else if (res.status === 404) {
-            // モデルが存在しない場合はすぐ次の予備モデルへ移る
             break;
           } else {
-            // APIキー間違いなどのエラーは即座に終了
             throw new Error(lastError);
           }
         }
       }
-      throw new Error(`すべてのモデルが混雑しているか利用できません。\n最後のエラー: ${lastError}`);
+      throw new Error(`すべてのモデルが混雑しているか利用できません。\n${lastError}`);
     }
 
-    // 「このレシートを読み取る」ボタンを押した時の処理
     sendBtn.addEventListener('click', async () => {
       let apiKey = localStorage.getItem('gemini_api_key');
       if (!apiKey) {
@@ -250,7 +568,7 @@
 
 【出力するJSONの形式】
 {
-  "date": "2026/10/16",
+  "date": "2026/10/17",
   "store": "店舗名",
   "payment": "支払方法",
   "items": [
@@ -267,32 +585,19 @@
           }]
         };
 
-        // リトライ＆フォールバック機能付きでGemini APIを呼び出し
         const geminiData = await callGeminiWithFallback(apiKey, requestBody);
-
-        if (!geminiData.candidates || geminiData.candidates.length === 0) {
-          throw new Error('AIからの応答データが空でした。');
-        }
-
         let responseText = geminiData.candidates[0].content.parts[0].text;
         responseText = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
-        
-        let parsedJson;
-        try {
-          parsedJson = JSON.parse(responseText);
-        } catch (e) {
-          throw new Error(`AIの出力形式エラー。\n出力内容: ${responseText.substring(0, 60)}...`);
-        }
+        const parsedJson = JSON.parse(responseText);
+        parsedJson.action = 'add_receipt';
 
         statusText.innerText = 'スプレッドシートに書き込み中...';
 
-        // GASへデータを送信
         const gasRes = await fetch(GAS_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'text/plain' },
           body: JSON.stringify(parsedJson)
         });
-
         const gasResult = await gasRes.json();
 
         if (gasResult.status === 'success') {
@@ -302,15 +607,166 @@
           statusText.innerText = '';
           cameraInput.value = '';
         } else {
-          throw new Error('GAS書き込みエラー: ' + gasResult.message);
+          throw new Error(gasResult.message);
         }
-
       } catch (error) {
         alert('【エラー詳細】\n' + error.message);
         statusText.innerText = '';
       } finally {
         sendBtn.innerText = '✨ このレシートを読み取る';
         sendBtn.disabled = false;
+      }
+    });
+
+    // ==================== 2. 月別内訳＆インコの応援表示 ====================
+    const loadSummaryBtn = document.getElementById('loadSummaryBtn');
+    const summaryStatus = document.getElementById('summaryStatus');
+    const parakeetBox = document.getElementById('parakeetBox');
+    const mainParakeetSpeech = document.getElementById('mainParakeetSpeech');
+    const categoryList = document.getElementById('categoryList');
+
+    loadSummaryBtn.addEventListener('click', loadMonthlySummary);
+
+    async function loadMonthlySummary() {
+      const selectedMonth = monthPicker.value;
+      if (!selectedMonth) return;
+
+      summaryStatus.innerText = 'スプレッドシートから集計データを取得中...';
+      categoryList.innerHTML = '';
+      parakeetBox.style.display = 'none';
+
+      try {
+        const res = await fetch(GAS_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain' },
+          body: JSON.stringify({ action: 'get_summary', month: selectedMonth })
+        });
+        const data = await res.json();
+
+        if (data.status !== 'success') {
+          throw new Error(data.message || 'データの取得に失敗しました');
+        }
+
+        summaryStatus.innerText = '';
+        renderSummaryAndParakeet(selectedMonth, data.summary, data.budgets);
+
+        // 取得した予算を設定タブの入力欄にも反映
+        CATEGORIES.forEach(cat => {
+          const input = document.getElementById(`budget-${cat}`);
+          if (input && data.budgets[cat] !== undefined) {
+            input.value = data.budgets[cat];
+          }
+        });
+
+      } catch (err) {
+        summaryStatus.innerText = 'エラー: ' + err.message;
+      }
+    }
+
+    function renderSummaryAndParakeet(selectedMonth, summary, budgets) {
+      const currentMonth = getCurrentYearMonth();
+      const isCurrentMonth = (selectedMonth === currentMonth);
+      const isPastMonth = (selectedMonth < currentMonth);
+
+      // 当月なら「いい調子！」、過去月なら「よくやった！」を設定
+      const praiseWord = isCurrentMonth ? 'いい調子！' : (isPastMonth ? 'よくやった！' : 'いい調子！');
+
+      let totalSpent = 0;
+      let totalBudget = 0;
+      let html = '';
+
+      CATEGORIES.forEach(cat => {
+        const spent = Number(summary[cat]) || 0;
+        const budget = Number(budgets[cat]) || 0;
+        totalSpent += spent;
+        totalBudget += budget;
+
+        const isUnderBudget = (budget > 0 && spent < budget);
+        const percent = budget > 0 ? Math.min(100, Math.round((spent / budget) * 100)) : 0;
+
+        // 予算を下回っている場合は青いセキセイインコが吹き出しでコメント
+        let commentHtml = '';
+        if (budget > 0) {
+          if (isUnderBudget) {
+            commentHtml = `
+              <div class="mini-parakeet-comment">
+                ${MINI_PARAKEET_SVG}
+                <div class="mini-bubble">${praiseWord}（残り ${(budget - spent).toLocaleString()}円）</div>
+              </div>
+            `;
+          } else {
+            commentHtml = `
+              <div class="mini-parakeet-comment">
+                ${MINI_PARAKEET_SVG}
+                <div class="mini-bubble over">予算オーバーだピヨ💦（+${(spent - budget).toLocaleString()}円）</div>
+              </div>
+            `;
+          }
+        }
+
+        html += `
+          <div class="category-card">
+            <div class="category-header">
+              <span class="category-name">${cat}</span>
+              <span class="category-amount">${spent.toLocaleString()}円 / 予算 ${budget.toLocaleString()}円</span>
+            </div>
+            <div class="progress-bg">
+              <div class="progress-bar ${isUnderBudget ? '' : 'over'}" style="width: ${percent}%;"></div>
+            </div>
+            ${commentHtml}
+          </div>
+        `;
+      });
+
+      categoryList.innerHTML = html;
+
+      // 上部の大きな青いセキセイインコの全体コメント
+      parakeetBox.style.display = 'flex';
+      if (totalSpent < totalBudget) {
+        if (isCurrentMonth) {
+          mainParakeetSpeech.innerHTML = `<strong>「いい調子！」</strong><br>今月の合計は ${totalSpent.toLocaleString()}円（総予算 ${totalBudget.toLocaleString()}円）。このペースで頑張ろうピヨ♪`;
+        } else if (isPastMonth) {
+          mainParakeetSpeech.innerHTML = `<strong>「よくやった！」</strong><br>${selectedMonth} の合計は ${totalSpent.toLocaleString()}円！総予算内にしっかり収めたねピヨ✨`;
+        } else {
+          mainParakeetSpeech.innerHTML = `<strong>「いい調子！」</strong><br>合計 ${totalSpent.toLocaleString()}円 / 総予算 ${totalBudget.toLocaleString()}円 だピヨ♪`;
+        }
+      } else {
+        mainParakeetSpeech.innerHTML = `合計 ${totalSpent.toLocaleString()}円（総予算 ${totalBudget.toLocaleString()}円）で予算を超えちゃったピヨ💦 内訳を見直してみよう！`;
+      }
+    }
+
+    // ==================== 3. 予算の保存処理 ====================
+    const saveBudgetBtn = document.getElementById('saveBudgetBtn');
+    const budgetStatus = document.getElementById('budgetStatus');
+
+    saveBudgetBtn.addEventListener('click', async () => {
+      const budgets = {};
+      CATEGORIES.forEach(cat => {
+        const val = document.getElementById(`budget-${cat}`).value;
+        budgets[cat] = Number(val) || 0;
+      });
+
+      saveBudgetBtn.disabled = true;
+      budgetStatus.innerText = '予算をスプレッドシートに保存中...';
+
+      try {
+        const res = await fetch(GAS_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain' },
+          body: JSON.stringify({ action: 'save_budgets', budgets: budgets })
+        });
+        const data = await res.json();
+        if (data.status === 'success') {
+          alert('カテゴリ別の予算を保存しました！');
+          budgetStatus.innerText = '';
+        } else {
+          throw new Error(data.message);
+        }
+      } catch (err) {
+        alert('保存エラー: ' + err.message);
+        budgetStatus.innerText = '';
+      } finally {
+        saveBudgetBtn.disabled = false;
       }
     });
   </script>
