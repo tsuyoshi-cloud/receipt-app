@@ -21,6 +21,34 @@
       font-weight: bold;
       box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
+
+    /* ==================== 初回起動時のAPIキーロック画面 ==================== */
+    #authScreen {
+      max-width: 420px;
+      margin: 40px auto;
+      padding: 25px 20px;
+      background: white;
+      border-radius: 14px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+      text-align: center;
+      width: 88%;
+      box-sizing: border-box;
+    }
+    #authScreen input {
+      width: 100%;
+      padding: 12px;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      box-sizing: border-box;
+      margin: 15px 0;
+      background: #fafafa;
+    }
+    /* 認証完了までメインアプリ画面は完全に隠す */
+    #appMain {
+      display: none;
+    }
+
     /* タブメニュー（横スクロール対応） */
     .tabs {
       display: flex;
@@ -405,105 +433,134 @@
 
   <header>🐦 インコ家計簿</header>
 
-  <!-- タブ切り替えボタン -->
-  <div class="tabs">
-    <button class="tab-btn active" onclick="switchTab('tab-camera', this)">📷 撮影</button>
-    <button class="tab-btn" onclick="switchTab('tab-manual', this)">✍️ 手動登録</button>
-    <button class="tab-btn" onclick="switchTab('tab-history', this)">📝 履歴・修正</button>
-    <button class="tab-btn" onclick="switchTab('tab-summary', this)">📊 内訳</button>
-    <button class="tab-btn" onclick="switchTab('tab-budget', this)">⚙️ 予算・設定</button>
+  <!-- ==================== 初回起動時のAPIキー認証（ロック画面） ==================== -->
+  <div id="authScreen">
+    <svg width="75" height="75" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="60" cy="60" r="54" fill="#e6f4ff" stroke="#36a3f7" stroke-width="4"/>
+      <circle cx="60" cy="55" r="34" fill="#ffffff"/>
+      <path d="M26 50 C26 15, 94 15, 94 50 C78 36, 42 36, 26 50 Z" fill="#36a3f7"/>
+      <ellipse cx="38" cy="65" rx="7" ry="9" fill="#1890ff"/>
+      <ellipse cx="82" cy="65" rx="7" ry="9" fill="#1890ff"/>
+      <circle cx="44" cy="52" r="6" fill="#111"/>
+      <circle cx="42" cy="50" r="2" fill="#fff"/>
+      <circle cx="76" cy="52" r="6" fill="#111"/>
+      <circle cx="74" cy="50" r="2" fill="#fff"/>
+      <ellipse cx="60" cy="52" rx="7" ry="3.5" fill="#69c0ff"/>
+      <path d="M53 55 Q60 72 67 55 Z" fill="#ffd666" stroke="#d48806" stroke-width="1.5"/>
+    </svg>
+    <h3 style="margin: 10px 0 5px 0; color:#2b8cee;">初回セットアップ・認証</h3>
+    <p style="font-size: 13px; color: #666; line-height: 1.5; margin-bottom: 5px;">
+      家計簿データの保護のため、最初にGemini APIキーを登録してください。<br>
+      （※一度認証するとこの端末に保存され、次回から自動で開きます）
+    </p>
+    <input type="password" id="initialApiKeyInput" placeholder="Gemini APIキーを入力">
+    <div id="authStatus" class="status-text" style="color:#d93025; font-weight:bold;"></div>
+    <button class="btn btn-success" id="authSubmitBtn" style="margin-bottom:0;">🔓 認証して利用を開始する</button>
   </div>
 
-  <div class="container">
+  <!-- ==================== メインアプリ画面（認証完了後に表示） ==================== -->
+  <div id="appMain">
 
-    <!-- ==================== タブ1：レシート撮影 ==================== -->
-    <div id="tab-camera" class="tab-content active">
-      <p style="font-size:13px; color:#666;">レシートを撮影するとAIが11のカテゴリに自動仕分けします</p>
-      <label for="cameraInput" class="btn">📷 カメラを起動</label>
-      <input type="file" id="cameraInput" accept="image/*" capture="environment">
-      <div><img id="preview" alt="プレビュー"></div>
-      <div id="statusText" class="status-text"></div>
-      <button id="sendBtn" class="btn btn-success" style="display: none;">✨ このレシートを読み取る</button>
+    <!-- タブ切り替えボタン -->
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('tab-camera', this)">📷 撮影</button>
+      <button class="tab-btn" onclick="switchTab('tab-manual', this)">✍️ 手動登録</button>
+      <button class="tab-btn" onclick="switchTab('tab-history', this)">📝 履歴・修正</button>
+      <button class="tab-btn" onclick="switchTab('tab-summary', this)">📊 内訳</button>
+      <button class="tab-btn" onclick="switchTab('tab-budget', this)">⚙️ 予算・設定</button>
     </div>
 
-    <!-- ==================== タブ2：手動登録 ==================== -->
-    <div id="tab-manual" class="tab-content">
-      <p style="font-size:13px; color:#666;">レシートがない買い物を直接登録します</p>
-      <div class="form-group"><label>購入日</label><input type="date" id="mDate"></div>
-      <div class="form-group"><label>店舗名（任意）</label><input type="text" id="mStore" placeholder="例: ○○スーパー、○○病院、電車など"></div>
-      <div class="form-group"><label>品目（必須）</label><input type="text" id="mName" placeholder="例: 診察代、洋服、ご祝儀など"></div>
-      <div class="form-group"><label>金額・税込（必須）</label><input type="number" id="mPrice" placeholder="0"></div>
-      <div class="form-group">
-        <label>カテゴリ</label>
-        <select id="mCategory"></select>
-      </div>
-      <div class="form-group"><label>支払方法（任意）</label><input type="text" id="mPayment" placeholder="例: 現金、クレジットカード、電子マネー"></div>
-      <div class="form-group"><label>備考（任意）</label><input type="text" id="mNote"></div>
-      
-      <div id="manualStatus" class="status-text"></div>
-      <button id="manualSaveBtn" class="btn btn-success">💾 スプレッドシートに登録</button>
-    </div>
+    <div class="container">
 
-    <!-- ==================== タブ3：履歴・修正 ==================== -->
-    <div id="tab-history" class="tab-content">
-      <div class="month-selector">
-        <input type="month" id="histMonthPicker">
-        <button class="btn-small" onclick="loadHistory()">表示</button>
+      <!-- ==================== タブ1：レシート撮影 ==================== -->
+      <div id="tab-camera" class="tab-content active">
+        <p style="font-size:13px; color:#666;">レシートを撮影するとAIが11のカテゴリに自動仕分けします</p>
+        <label for="cameraInput" class="btn">📷 カメラを起動</label>
+        <input type="file" id="cameraInput" accept="image/*" capture="environment">
+        <div><img id="preview" alt="プレビュー"></div>
+        <div id="statusText" class="status-text"></div>
+        <button id="sendBtn" class="btn btn-success" style="display: none;">✨ このレシートを読み取る</button>
       </div>
-      <div id="histStatus" class="status-text"></div>
-      <div id="historyList"></div>
-    </div>
 
-    <!-- ==================== タブ4：家計簿内訳 ==================== -->
-    <div id="tab-summary" class="tab-content">
-      <div class="month-selector">
-        <input type="month" id="sumMonthPicker">
-        <button class="btn-small" onclick="loadMonthlySummary()">表示</button>
+      <!-- ==================== タブ2：手動登録 ==================== -->
+      <div id="tab-manual" class="tab-content">
+        <p style="font-size:13px; color:#666;">レシートがない買い物を直接登録します</p>
+        <div class="form-group"><label>購入日</label><input type="date" id="mDate"></div>
+        <div class="form-group"><label>店舗名（任意）</label><input type="text" id="mStore" placeholder="例: ○○スーパー、○○病院、電車など"></div>
+        <div class="form-group"><label>品目（必須）</label><input type="text" id="mName" placeholder="例: 診察代、洋服、ご祝儀など"></div>
+        <div class="form-group"><label>金額・税込（必須）</label><input type="number" id="mPrice" placeholder="0"></div>
+        <div class="form-group">
+          <label>カテゴリ</label>
+          <select id="mCategory"></select>
+        </div>
+        <div class="form-group"><label>支払方法（任意）</label><input type="text" id="mPayment" placeholder="例: 現金、クレジットカード、電子マネー"></div>
+        <div class="form-group"><label>備考（任意）</label><input type="text" id="mNote"></div>
+        
+        <div id="manualStatus" class="status-text"></div>
+        <button id="manualSaveBtn" class="btn btn-success">💾 スプレッドシートに登録</button>
       </div>
-      <div id="summaryStatus" class="status-text"></div>
 
-      <!-- 青いセキセイインコのイラスト＆吹き出し -->
-      <div class="parakeet-box" id="parakeetBox" style="display:none;">
-        <svg class="parakeet-svg" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
-          <path d="M40 95 L25 118 L48 105 Z" fill="#0050b3"/>
-          <ellipse cx="62" cy="72" rx="28" ry="34" fill="#36a3f7"/>
-          <ellipse cx="66" cy="76" rx="20" ry="26" fill="#69c0ff"/>
-          <path d="M42 55 C30 70, 38 92, 55 92 C48 78, 52 62, 42 55 Z" fill="#1890ff" stroke="#096dd9" stroke-width="2"/>
-          <circle cx="62" cy="38" r="24" fill="#ffffff"/>
-          <path d="M38 35 C38 15, 86 15, 86 35 C75 26, 50 26, 38 35 Z" fill="#36a3f7"/>
-          <ellipse cx="48" cy="46" rx="5" ry="7" fill="#1890ff"/>
-          <ellipse cx="78" cy="46" rx="5" ry="7" fill="#1890ff"/>
-          <circle cx="53" cy="52" r="2" fill="#222"/>
-          <circle cx="59" cy="54" r="2" fill="#222"/>
-          <circle cx="73" cy="52" r="2" fill="#222"/>
-          <circle cx="51" cy="36" r="4.5" fill="#111"/>
-          <circle cx="49.5" cy="34.5" r="1.5" fill="#fff"/>
-          <circle cx="75" cy="36" r="4.5" fill="#111"/>
-          <circle cx="73.5" cy="34.5" r="1.5" fill="#fff"/>
-          <ellipse cx="63" cy="36" rx="5" ry="2.5" fill="#69c0ff"/>
-          <path d="M58 38 Q63 50 68 38 Z" fill="#ffd666" stroke="#d48806" stroke-width="1"/>
-          <path d="M52 104 L48 112 M52 104 L54 112" stroke="#ff85c0" stroke-width="3" stroke-linecap="round"/>
-          <path d="M72 104 L68 112 M72 104 L74 112" stroke="#ff85c0" stroke-width="3" stroke-linecap="round"/>
-        </svg>
-        <div class="speech-bubble" id="mainParakeetSpeech">
-          月を選んで「表示」を押してねピヨ！
+      <!-- ==================== タブ3：履歴・修正 ==================== -->
+      <div id="tab-history" class="tab-content">
+        <div class="month-selector">
+          <input type="month" id="histMonthPicker">
+          <button class="btn-small" onclick="loadHistory()">表示</button>
+        </div>
+        <div id="histStatus" class="status-text"></div>
+        <div id="historyList"></div>
+      </div>
+
+      <!-- ==================== タブ4：家計簿内訳 ==================== -->
+      <div id="tab-summary" class="tab-content">
+        <div class="month-selector">
+          <input type="month" id="sumMonthPicker">
+          <button class="btn-small" onclick="loadMonthlySummary()">表示</button>
+        </div>
+        <div id="summaryStatus" class="status-text"></div>
+
+        <!-- 青いセキセイインコのイラスト＆吹き出し -->
+        <div class="parakeet-box" id="parakeetBox" style="display:none;">
+          <svg class="parakeet-svg" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+            <path d="M40 95 L25 118 L48 105 Z" fill="#0050b3"/>
+            <ellipse cx="62" cy="72" rx="28" ry="34" fill="#36a3f7"/>
+            <ellipse cx="66" cy="76" rx="20" ry="26" fill="#69c0ff"/>
+            <path d="M42 55 C30 70, 38 92, 55 92 C48 78, 52 62, 42 55 Z" fill="#1890ff" stroke="#096dd9" stroke-width="2"/>
+            <circle cx="62" cy="38" r="24" fill="#ffffff"/>
+            <path d="M38 35 C38 15, 86 15, 86 35 C75 26, 50 26, 38 35 Z" fill="#36a3f7"/>
+            <ellipse cx="48" cy="46" rx="5" ry="7" fill="#1890ff"/>
+            <ellipse cx="78" cy="46" rx="5" ry="7" fill="#1890ff"/>
+            <circle cx="53" cy="52" r="2" fill="#222"/>
+            <circle cx="59" cy="54" r="2" fill="#222"/>
+            <circle cx="73" cy="52" r="2" fill="#222"/>
+            <circle cx="51" cy="36" r="4.5" fill="#111"/>
+            <circle cx="49.5" cy="34.5" r="1.5" fill="#fff"/>
+            <circle cx="75" cy="36" r="4.5" fill="#111"/>
+            <circle cx="73.5" cy="34.5" r="1.5" fill="#fff"/>
+            <ellipse cx="63" cy="36" rx="5" ry="2.5" fill="#69c0ff"/>
+            <path d="M58 38 Q63 50 68 38 Z" fill="#ffd666" stroke="#d48806" stroke-width="1"/>
+            <path d="M52 104 L48 112 M52 104 L54 112" stroke="#ff85c0" stroke-width="3" stroke-linecap="round"/>
+            <path d="M72 104 L68 112 M72 104 L74 112" stroke="#ff85c0" stroke-width="3" stroke-linecap="round"/>
+          </svg>
+          <div class="speech-bubble" id="mainParakeetSpeech">
+            月を選んで「表示」を押してねピヨ！
+          </div>
+        </div>
+
+        <div id="categoryList"></div>
+      </div>
+
+      <!-- ==================== タブ5：予算・設定 ==================== -->
+      <div id="tab-budget" class="tab-content">
+        <p style="font-size:13px; color:#666;">1ヶ月あたりのカテゴリ別予算（円）</p>
+        <div id="budgetInputsArea"></div>
+        <div id="budgetStatus" class="status-text"></div>
+        <button class="btn btn-success" id="saveBudgetBtn">💾 予算を保存する</button>
+        <div style="border-top:1px solid #ddd; margin-top:20px; padding-top:10px;">
+          <button id="resetKeyBtn" class="btn-reset">🔑 APIキーを変更・ロック画面に戻る</button>
         </div>
       </div>
 
-      <div id="categoryList"></div>
     </div>
-
-    <!-- ==================== タブ5：予算・設定 ==================== -->
-    <div id="tab-budget" class="tab-content">
-      <p style="font-size:13px; color:#666;">1ヶ月あたりのカテゴリ別予算（円）</p>
-      <div id="budgetInputsArea"></div>
-      <div id="budgetStatus" class="status-text"></div>
-      <button class="btn btn-success" id="saveBudgetBtn">💾 予算を保存する</button>
-      <div style="border-top:1px solid #ddd; margin-top:20px; padding-top:10px;">
-        <button id="resetKeyBtn" class="btn-reset">🔑 Gemini APIキーを再設定する</button>
-      </div>
-    </div>
-
   </div>
 
   <!-- ==================== 履歴修正・削除用モーダル ==================== -->
@@ -537,15 +594,18 @@
     // ====================================================================
     // ★書き換え箇所1：ご自身のGASのウェブアプリURLに書き換えてください
     const GAS_URL = 'https://script.google.com/macros/s/AKfycbz9EFDt4li-cLJ8Om7VW8tW7vaSMUQIeqUDCq68b_HhuGdGDbK18K29SlKyo4LFgTUd/exec';
+
     // ★書き換え箇所2：使用するモデルの優先順位リスト
     const GEMINI_MODELS = [
       'gemini-3.5-flash',
-      'gemini-2.5-flash',
-      'gemini-2.0-flash'
+      'gemini-3.6-flash',
+      'gemini-3.7-flash',
+      'gemini-3.8-flash',
+      'gemini-4-argon'
     ];
     // ====================================================================
 
-    // カテゴリ定義（「被服費」「慶弔費」を追加した全11カテゴリ）
+    // カテゴリ定義（全11カテゴリ）
     const CATEGORY_CONFIG = [
       { name: '食費', icon: '🍎', defaultBudget: 25000 },
       { name: 'お菓子', icon: '🍰', defaultBudget: 5000 },
@@ -578,7 +638,77 @@
       </svg>
     `;
 
-    // プルダウンと予算入力欄の自動生成
+    // ==================== 0. 初回起動時のAPIキー認証制御 ====================
+    const authScreen = document.getElementById('authScreen');
+    const appMain = document.getElementById('appMain');
+    const initialApiKeyInput = document.getElementById('initialApiKeyInput');
+    const authSubmitBtn = document.getElementById('authSubmitBtn');
+    const authStatus = document.getElementById('authStatus');
+
+    // 有効なGemini APIキーかどうかをGoogleサーバーに問い合わせて検証する関数
+    async function verifyGeminiApiKey(key) {
+      try {
+        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(key)}`);
+        return res.ok;
+      } catch (e) {
+        return false;
+      }
+    }
+
+    // アプリ起動時のチェック
+    async function checkInitialAuth() {
+      const savedKey = localStorage.getItem('gemini_api_key');
+      if (savedKey) {
+        // すでに保存されている場合はメイン画面を表示
+        authScreen.style.display = 'none';
+        appMain.style.display = 'block';
+      } else {
+        // 未登録の場合はロック画面を表示し、メイン画面を隠す
+        authScreen.style.display = 'block';
+        appMain.style.display = 'none';
+      }
+    }
+
+    // 初回ロック画面の「認証して利用を開始する」ボタン処理
+    authSubmitBtn.addEventListener('click', async () => {
+      const inputKey = initialApiKeyInput.value.trim();
+      if (!inputKey) {
+        authStatus.innerText = 'APIキーを入力してください。';
+        return;
+      }
+
+      authSubmitBtn.disabled = true;
+      authStatus.style.color = '#555';
+      authStatus.innerText = 'APIキーが有効か確認中...';
+
+      const isValid = await verifyGeminiApiKey(inputKey);
+      if (isValid) {
+        localStorage.setItem('gemini_api_key', inputKey);
+        authStatus.innerText = '';
+        initialApiKeyInput.value = '';
+        authScreen.style.display = 'none';
+        appMain.style.display = 'block';
+      } else {
+        authStatus.style.color = '#d93025';
+        authStatus.innerText = '無効なAPIキーです。正しいGemini APIキーを入力してください。';
+      }
+      authSubmitBtn.disabled = false;
+    });
+
+    // 設定タブの「APIキーを変更・ロック画面に戻る」ボタン処理
+    document.getElementById('resetKeyBtn').addEventListener('click', () => {
+      const isOk = confirm('保存されているAPIキーを解除して、初期ロック画面に戻りますか？');
+      if (isOk) {
+        localStorage.removeItem('gemini_api_key');
+        authScreen.style.display = 'block';
+        appMain.style.display = 'none';
+      }
+    });
+
+    // 起動時に認証チェックを実行
+    checkInitialAuth();
+
+    // ==================== 初期UIセットアップ ====================
     const mCategorySelect = document.getElementById('mCategory');
     const eCategorySelect = document.getElementById('eCategory');
     const budgetInputsArea = document.getElementById('budgetInputsArea');
@@ -594,7 +724,6 @@
       `;
     });
 
-    // 現在の日付・年月を取得（ローカル時間基準）
     function getTodayParts() {
       const now = new Date();
       const y = now.getFullYear();
@@ -608,8 +737,10 @@
     document.getElementById('sumMonthPicker').value = thisMonthStr;
     document.getElementById('histMonthPicker').value = thisMonthStr;
 
-    // タブ切り替え処理
+    // タブ切り替え処理（未認証時は動作しないようガード）
     function switchTab(tabId, btnElement) {
+      if (!localStorage.getItem('gemini_api_key')) return;
+
       document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
       document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
       document.getElementById(tabId).classList.add('active');
@@ -618,21 +749,6 @@
       if (tabId === 'tab-summary') loadMonthlySummary();
       if (tabId === 'tab-history') loadHistory();
     }
-
-    // APIキー再設定
-    document.getElementById('resetKeyBtn').addEventListener('click', () => {
-      const currentKey = localStorage.getItem('gemini_api_key') || '';
-      const newKey = prompt('新しいGemini APIキーを入力してください\n（空欄でOKを押すと削除されます）', currentKey);
-      if (newKey !== null) {
-        if (newKey.trim() === '') {
-          localStorage.removeItem('gemini_api_key');
-          alert('APIキーを削除しました。');
-        } else {
-          localStorage.setItem('gemini_api_key', newKey.trim());
-          alert('新しいAPIキーを保存しました。');
-        }
-      }
-    });
 
     // ==================== 1. レシート撮影・AI読み取り ====================
     const cameraInput = document.getElementById('cameraInput');
@@ -710,11 +826,10 @@
     }
 
     sendBtn.addEventListener('click', async () => {
-      let apiKey = localStorage.getItem('gemini_api_key');
+      const apiKey = localStorage.getItem('gemini_api_key');
       if (!apiKey) {
-        apiKey = prompt('Gemini APIキーを入力してください');
-        if (!apiKey) return;
-        localStorage.setItem('gemini_api_key', apiKey.trim());
+        checkInitialAuth();
+        return;
       }
 
       sendBtn.innerText = '処理中...';
@@ -783,6 +898,8 @@
 
     // ==================== 2. 手動登録処理 ====================
     document.getElementById('manualSaveBtn').addEventListener('click', async () => {
+      if (!localStorage.getItem('gemini_api_key')) return;
+
       const btn = document.getElementById('manualSaveBtn');
       const status = document.getElementById('manualStatus');
       const nameVal = document.getElementById('mName').value.trim();
@@ -835,6 +952,8 @@
 
     // ==================== 3. 履歴表示・個別修正・削除 ====================
     async function loadHistory() {
+      if (!localStorage.getItem('gemini_api_key')) return;
+
       const month = document.getElementById('histMonthPicker').value;
       const status = document.getElementById('histStatus');
       const list = document.getElementById('historyList');
@@ -942,13 +1061,11 @@
       }
     }
 
-    // 履歴一覧の「削除」ボタンから直接削除する処理
     async function confirmAndDeleteRecord(recJsonStr) {
       const rec = JSON.parse(decodeURIComponent(recJsonStr));
       await executeDelete(rec.row, rec.date, rec.name, rec.price);
     }
 
-    // 修正モーダル内の「このデータを削除する」ボタンから削除する処理
     async function deleteFromModal() {
       const row = Number(document.getElementById('eRow').value);
       const date = document.getElementById('eDate').value;
@@ -957,7 +1074,6 @@
       await executeDelete(row, date, name, price);
     }
 
-    // 削除確認ダイアログとGASへの削除リクエスト送信
     async function executeDelete(row, date, name, price) {
       const isConfirmed = confirm(`以下のデータを削除しますか？\n\n・日付: ${date}\n・品目: ${name}\n・金額: ${Number(price).toLocaleString()}円\n\n※スプレッドシートからも行ごと削除されます。`);
       if (!isConfirmed) return;
@@ -981,7 +1097,7 @@
         if (data.status === 'success') {
           alert('データを削除しました！');
           closeModal();
-          loadHistory(); // 行番号のズレを防ぐため履歴一覧を再取得して最新化
+          loadHistory();
         } else {
           throw new Error(data.message);
         }
@@ -996,6 +1112,8 @@
 
     // ==================== 4. 月別内訳＆青いセキセイインコの応援表示 ====================
     async function loadMonthlySummary() {
+      if (!localStorage.getItem('gemini_api_key')) return;
+
       const selectedMonth = document.getElementById('sumMonthPicker').value;
       const summaryStatus = document.getElementById('summaryStatus');
       const categoryList = document.getElementById('categoryList');
@@ -1020,7 +1138,6 @@
         summaryStatus.innerText = '';
         renderSummaryAndParakeet(selectedMonth, data.summary, data.budgets);
 
-        // 予算設定タブの数値も同期
         CATEGORIES.forEach(cat => {
           const input = document.getElementById(`budget-${cat}`);
           if (input && data.budgets[cat] !== undefined) {
@@ -1037,7 +1154,6 @@
       const isCurrentMonth = (selectedMonth === currentMonth);
       const isPastMonth = (selectedMonth < currentMonth);
 
-      // 当月なら「いい調子！」、当月より前なら「よくやった！」
       const praiseWord = isCurrentMonth ? 'いい調子！' : (isPastMonth ? 'よくやった！' : 'いい調子！');
 
       let totalSpent = 0;
@@ -1108,6 +1224,8 @@
 
     // ==================== 5. 予算の保存処理 ====================
     document.getElementById('saveBudgetBtn').addEventListener('click', async () => {
+      if (!localStorage.getItem('gemini_api_key')) return;
+
       const btn = document.getElementById('saveBudgetBtn');
       const status = document.getElementById('budgetStatus');
       const budgets = {};
