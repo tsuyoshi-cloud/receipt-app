@@ -82,17 +82,37 @@
     .btn-success {
       background-color: #28a745;
     }
+    .btn-danger {
+      background-color: #dc3545;
+    }
     .btn:disabled {
       background-color: #999;
       cursor: not-allowed;
     }
+    .record-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
     .btn-edit {
       background-color: #6c757d;
-      padding: 7px 14px;
+      padding: 6px 12px;
       font-size: 13px;
       margin: 0;
       width: auto;
       border-radius: 6px;
+    }
+    .btn-del-small {
+      background-color: #fff1f0;
+      color: #cf1322;
+      border: 1px solid #ffa39e;
+      padding: 5px 12px;
+      font-size: 12px;
+      font-weight: bold;
+      margin: 0;
+      width: auto;
+      border-radius: 6px;
+      cursor: pointer;
     }
     #preview {
       max-width: 100%;
@@ -398,7 +418,7 @@
 
     <!-- ==================== タブ1：レシート撮影 ==================== -->
     <div id="tab-camera" class="tab-content active">
-      <p style="font-size:13px; color:#666;">レシートを撮影するとAIが9つのカテゴリに自動仕分けします</p>
+      <p style="font-size:13px; color:#666;">レシートを撮影するとAIが11のカテゴリに自動仕分けします</p>
       <label for="cameraInput" class="btn">📷 カメラを起動</label>
       <input type="file" id="cameraInput" accept="image/*" capture="environment">
       <div><img id="preview" alt="プレビュー"></div>
@@ -411,13 +431,13 @@
       <p style="font-size:13px; color:#666;">レシートがない買い物を直接登録します</p>
       <div class="form-group"><label>購入日</label><input type="date" id="mDate"></div>
       <div class="form-group"><label>店舗名（任意）</label><input type="text" id="mStore" placeholder="例: ○○スーパー、○○病院、電車など"></div>
-      <div class="form-group"><label>品目（必須）</label><input type="text" id="mName" placeholder="例: 診察代、Suicaチャージ、電気代"></div>
+      <div class="form-group"><label>品目（必須）</label><input type="text" id="mName" placeholder="例: 診察代、洋服、ご祝儀など"></div>
       <div class="form-group"><label>金額・税込（必須）</label><input type="number" id="mPrice" placeholder="0"></div>
       <div class="form-group">
         <label>カテゴリ</label>
         <select id="mCategory"></select>
       </div>
-      <div class="form-group"><label>支払方法（任意）</label><input type="text" id="mPayment" placeholder="例: 現金、クレジットカード、口座振替"></div>
+      <div class="form-group"><label>支払方法（任意）</label><input type="text" id="mPayment" placeholder="例: 現金、クレジットカード、電子マネー"></div>
       <div class="form-group"><label>備考（任意）</label><input type="text" id="mNote"></div>
       
       <div id="manualStatus" class="status-text"></div>
@@ -486,10 +506,10 @@
 
   </div>
 
-  <!-- ==================== 履歴修正用モーダル ==================== -->
+  <!-- ==================== 履歴修正・削除用モーダル ==================== -->
   <div id="editModal" class="modal-overlay">
     <div class="modal-content">
-      <h3 style="margin-top:0; color:#2b8cee;">📝 登録内容の修正</h3>
+      <h3 style="margin-top:0; color:#2b8cee;">📝 登録内容の修正・削除</h3>
       <input type="hidden" id="eRow">
       <div class="form-group"><label>購入日</label><input type="date" id="eDate"></div>
       <div class="form-group"><label>店舗名</label><input type="text" id="eStore"></div>
@@ -503,9 +523,12 @@
       <div class="form-group"><label>備考</label><input type="text" id="eNote"></div>
       
       <div id="editStatus" class="status-text"></div>
-      <div style="display:flex; gap:10px;">
+      <div style="display:flex; gap:10px; margin-bottom:12px;">
         <button class="btn btn-success" id="saveEditBtn" onclick="saveEdit()" style="margin:0;">💾 保存</button>
         <button class="btn" style="background:#888; margin:0;" onclick="closeModal()">キャンセル</button>
+      </div>
+      <div style="border-top:1px solid #dce8f5; padding-top:12px;">
+        <button class="btn btn-danger" id="deleteModalBtn" onclick="deleteFromModal()" style="margin:0; font-size:14px; padding:10px;">🗑️ このデータを削除する</button>
       </div>
     </div>
   </div>
@@ -514,7 +537,6 @@
     // ====================================================================
     // ★書き換え箇所1：ご自身のGASのウェブアプリURLに書き換えてください
     const GAS_URL = 'https://script.google.com/macros/s/AKfycbz9EFDt4li-cLJ8Om7VW8tW7vaSMUQIeqUDCq68b_HhuGdGDbK18K29SlKyo4LFgTUd/exec';
-
     // ★書き換え箇所2：使用するモデルの優先順位リスト
     const GEMINI_MODELS = [
       'gemini-3.5-flash',
@@ -523,15 +545,17 @@
     ];
     // ====================================================================
 
-    // カテゴリ定義（絵文字アイコン＆初期予算つき）
+    // カテゴリ定義（「被服費」「慶弔費」を追加した全11カテゴリ）
     const CATEGORY_CONFIG = [
       { name: '食費', icon: '🍎', defaultBudget: 25000 },
       { name: 'お菓子', icon: '🍰', defaultBudget: 5000 },
       { name: '日用品', icon: '🧻', defaultBudget: 10000 },
       { name: '外食', icon: '🍽️', defaultBudget: 10000 },
+      { name: '被服費', icon: '👕', defaultBudget: 10000 },
       { name: '交通費', icon: '🚃', defaultBudget: 5000 },
       { name: '医療費', icon: '🏥', defaultBudget: 5000 },
       { name: '光熱費', icon: '💡', defaultBudget: 15000 },
+      { name: '慶弔費', icon: '💐', defaultBudget: 5000 },
       { name: '娯楽費', icon: '🎮', defaultBudget: 10000 },
       { name: 'その他', icon: '📦', defaultBudget: 5000 }
     ];
@@ -703,7 +727,7 @@
 ・店舗名
 ・支払方法（現金、クレジットカード、電子マネーなど）
 ・各品目（商品名、金額、カテゴリ）
-※カテゴリは「食費」「お菓子」「日用品」「外食」「交通費」「医療費」「光熱費」「娯楽費」「その他」の9つからAIが判断して分類してください。
+※カテゴリは「食費」「お菓子」「日用品」「外食」「被服費」「交通費」「医療費」「光熱費」「慶弔費」「娯楽費」「その他」の11個からAIが判断して分類してください。
 
 【出力するJSONの形式】
 {
@@ -809,7 +833,7 @@
       }
     });
 
-    // ==================== 3. 履歴表示・個別修正 ====================
+    // ==================== 3. 履歴表示・個別修正・削除 ====================
     async function loadHistory() {
       const month = document.getElementById('histMonthPicker').value;
       const status = document.getElementById('histStatus');
@@ -847,7 +871,10 @@
                   ${rec.note ? `<span style="color:#888;">📝 ${rec.note}</span>` : ''}
                 </div>
               </div>
-              <button class="btn btn-edit" onclick="openEditModal('${recJson}')">修正</button>
+              <div class="record-actions">
+                <button class="btn btn-edit" onclick="openEditModal('${recJson}')">修正</button>
+                <button class="btn-del-small" onclick="confirmAndDeleteRecord('${recJson}')">削除</button>
+              </div>
             </div>
           `;
         });
@@ -912,6 +939,58 @@
         status.innerText = 'エラー: ' + e.message;
       } finally {
         btn.disabled = false;
+      }
+    }
+
+    // 履歴一覧の「削除」ボタンから直接削除する処理
+    async function confirmAndDeleteRecord(recJsonStr) {
+      const rec = JSON.parse(decodeURIComponent(recJsonStr));
+      await executeDelete(rec.row, rec.date, rec.name, rec.price);
+    }
+
+    // 修正モーダル内の「このデータを削除する」ボタンから削除する処理
+    async function deleteFromModal() {
+      const row = Number(document.getElementById('eRow').value);
+      const date = document.getElementById('eDate').value;
+      const name = document.getElementById('eName').value;
+      const price = document.getElementById('ePrice').value;
+      await executeDelete(row, date, name, price);
+    }
+
+    // 削除確認ダイアログとGASへの削除リクエスト送信
+    async function executeDelete(row, date, name, price) {
+      const isConfirmed = confirm(`以下のデータを削除しますか？\n\n・日付: ${date}\n・品目: ${name}\n・金額: ${Number(price).toLocaleString()}円\n\n※スプレッドシートからも行ごと削除されます。`);
+      if (!isConfirmed) return;
+
+      const histStatus = document.getElementById('histStatus');
+      const editStatus = document.getElementById('editStatus');
+      const delModalBtn = document.getElementById('deleteModalBtn');
+
+      histStatus.innerText = 'スプレッドシートから行を削除中...';
+      if (editStatus) editStatus.innerText = '削除中...';
+      if (delModalBtn) delModalBtn.disabled = true;
+
+      try {
+        const res = await fetch(GAS_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain' },
+          body: JSON.stringify({ action: 'delete_record', row: Number(row) })
+        });
+        const data = await res.json();
+
+        if (data.status === 'success') {
+          alert('データを削除しました！');
+          closeModal();
+          loadHistory(); // 行番号のズレを防ぐため履歴一覧を再取得して最新化
+        } else {
+          throw new Error(data.message);
+        }
+      } catch (e) {
+        alert('削除エラー: ' + e.message);
+        histStatus.innerText = '';
+        if (editStatus) editStatus.innerText = '';
+      } finally {
+        if (delModalBtn) delModalBtn.disabled = false;
       }
     }
 
@@ -988,7 +1067,7 @@
             commentHtml = `
               <div class="mini-parakeet-comment">
                 ${MINI_PARAKEET_SVG}
-                <div class="mini-bubble over">予算オーバー💦（+${(spent - budget).toLocaleString()}円）</div>
+                <div class="mini-bubble over">予算オーバーだピヨ💦（+${(spent - budget).toLocaleString()}円）</div>
               </div>
             `;
           }
@@ -1016,14 +1095,14 @@
 
       if (totalSpent < totalBudget) {
         if (isCurrentMonth) {
-          mainSpeech.innerHTML = `<strong>「いい調子！」</strong><br>今月の合計は ${totalSpent.toLocaleString()}円（総予算 ${totalBudget.toLocaleString()}円）。このペースで頑張ろう♪`;
+          mainSpeech.innerHTML = `<strong>「いい調子！」</strong><br>今月の合計は ${totalSpent.toLocaleString()}円（総予算 ${totalBudget.toLocaleString()}円）。このペースで頑張ろうピヨ♪`;
         } else if (isPastMonth) {
-          mainSpeech.innerHTML = `<strong>「よくやった！」</strong><br>${selectedMonth} の合計は ${totalSpent.toLocaleString()}円！総予算内にしっかり収めたね✨`;
+          mainSpeech.innerHTML = `<strong>「よくやった！」</strong><br>${selectedMonth} の合計は ${totalSpent.toLocaleString()}円！総予算内にしっかり収めたねピヨ✨`;
         } else {
-          mainSpeech.innerHTML = `<strong>「いい調子！」</strong><br>合計 ${totalSpent.toLocaleString()}円 / 総予算 ${totalBudget.toLocaleString()}円 だよ♪`;
+          mainSpeech.innerHTML = `<strong>「いい調子！」</strong><br>合計 ${totalSpent.toLocaleString()}円 / 総予算 ${totalBudget.toLocaleString()}円 だピヨ♪`;
         }
       } else {
-        mainSpeech.innerHTML = `合計 ${totalSpent.toLocaleString()}円（総予算 ${totalBudget.toLocaleString()}円）で予算を超えちゃった💦 内訳を見直してみよう！`;
+        mainSpeech.innerHTML = `合計 ${totalSpent.toLocaleString()}円（総予算 ${totalBudget.toLocaleString()}円）で予算を超えちゃったピヨ💦 内訳を見直してみよう！`;
       }
     }
 
@@ -1048,7 +1127,7 @@
         });
         const data = await res.json();
         if (data.status === 'success') {
-          alert('9カテゴリの予算を保存しました！');
+          alert('11カテゴリの予算を保存しました！');
           status.innerText = '';
         } else {
           throw new Error(data.message);
