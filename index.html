@@ -5,98 +5,432 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>インコ家計簿アプリ</title>
   <style>
-    /* （基本スタイルは前回同様） */
-    body { font-family: -apple-system, sans-serif; margin: 0; padding: 0; background-color: #f0f7ff; color: #333; }
-    header { background-color: #2b8cee; color: white; padding: 15px; text-align: center; font-size: 20px; font-weight: bold; }
-    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f0f7ff;
+      color: #333;
+    }
+    header {
+      background-color: #2b8cee;
+      color: white;
+      padding: 15px;
+      text-align: center;
+      font-size: 20px;
+      font-weight: bold;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
     /* タブメニュー（横スクロール対応） */
-    .tabs { display: flex; background: white; border-bottom: 1px solid #ddd; overflow-x: auto; white-space: nowrap; -webkit-overflow-scrolling: touch; }
-    .tab-btn { flex: 0 0 auto; padding: 12px 15px; border: none; background: none; font-size: 14px; font-weight: bold; color: #666; cursor: pointer; border-bottom: 3px solid transparent; }
-    .tab-btn.active { color: #2b8cee; border-bottom: 3px solid #2b8cee; background-color: #f8fbff; }
-    .tab-content { display: none; }
-    .tab-content.active { display: block; }
-    .container { padding: 15px; max-width: 500px; margin: 0 auto; text-align: center; }
+    .tabs {
+      display: flex;
+      background: white;
+      border-bottom: 1px solid #ddd;
+      overflow-x: auto;
+      white-space: nowrap;
+      -webkit-overflow-scrolling: touch;
+    }
+    .tab-btn {
+      flex: 1 0 auto;
+      padding: 12px 14px;
+      border: none;
+      background: none;
+      font-size: 14px;
+      font-weight: bold;
+      color: #666;
+      cursor: pointer;
+      border-bottom: 3px solid transparent;
+    }
+    .tab-btn.active {
+      color: #2b8cee;
+      border-bottom: 3px solid #2b8cee;
+      background-color: #f8fbff;
+    }
+    .tab-content {
+      display: none;
+    }
+    .tab-content.active {
+      display: block;
+    }
+    .container {
+      padding: 15px;
+      max-width: 500px;
+      margin: 0 auto;
+      text-align: center;
+    }
 
-    /* ボタン・フォーム系 */
-    .btn { display: inline-block; width: 100%; max-width: 320px; padding: 12px; font-size: 16px; font-weight: bold; color: white; background-color: #2b8cee; border: none; border-radius: 8px; cursor: pointer; margin-bottom: 15px; box-sizing: border-box; }
-    .btn-success { background-color: #28a745; }
-    .btn-edit { background-color: #6c757d; padding: 6px 12px; font-size: 13px; margin: 0; width: auto; }
-    .status-text { font-size: 14px; color: #555; margin: 10px 0; min-height: 20px; }
+    /* ボタン・入力系 */
+    input[type="file"] {
+      display: none;
+    }
+    .btn {
+      display: inline-block;
+      width: 100%;
+      max-width: 320px;
+      padding: 13px 20px;
+      font-size: 16px;
+      font-weight: bold;
+      color: white;
+      background-color: #2b8cee;
+      border: none;
+      border-radius: 10px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      cursor: pointer;
+      margin-bottom: 15px;
+      box-sizing: border-box;
+    }
+    .btn-success {
+      background-color: #28a745;
+    }
+    .btn:disabled {
+      background-color: #999;
+      cursor: not-allowed;
+    }
+    .btn-edit {
+      background-color: #6c757d;
+      padding: 7px 14px;
+      font-size: 13px;
+      margin: 0;
+      width: auto;
+      border-radius: 6px;
+    }
+    #preview {
+      max-width: 100%;
+      max-height: 320px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      display: none;
+      margin: 0 auto 15px auto;
+    }
+    .status-text {
+      font-size: 14px;
+      color: #555;
+      margin: 10px 0;
+      min-height: 20px;
+    }
 
     /* フォーム入力エリア（手動・編集用） */
-    .form-group { text-align: left; margin-bottom: 12px; background: white; padding: 10px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-    .form-group label { display: block; font-size: 13px; color: #666; margin-bottom: 5px; font-weight: bold; }
-    .form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 16px; box-sizing: border-box; background: #fafafa; }
-    
-    /* 履歴カード */
-    .record-card { background: white; border-radius: 8px; padding: 12px; margin-bottom: 10px; text-align: left; box-shadow: 0 1px 3px rgba(0,0,0,0.1); display: flex; justify-content: space-between; align-items: center; }
-    .record-info { flex: 1; }
-    .record-date { font-size: 12px; color: #888; margin-bottom: 4px; }
-    .record-main { font-weight: bold; font-size: 15px; margin-bottom: 4px; }
-    .record-sub { font-size: 13px; color: #555; display: flex; gap: 8px; }
-    .badge { background: #e6f4ff; color: #0050b3; padding: 2px 6px; border-radius: 4px; font-size: 11px; }
+    .form-group {
+      text-align: left;
+      margin-bottom: 12px;
+      background: white;
+      padding: 10px 12px;
+      border-radius: 8px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    .form-group label {
+      display: block;
+      font-size: 13px;
+      color: #555;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+    .form-group input, .form-group select {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 16px;
+      box-sizing: border-box;
+      background: #fafafa;
+    }
 
-    /* モーダル（ポップアップ画面） */
-    .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; display: none; align-items: center; justify-content: center; }
-    .modal-content { background: #f0f7ff; width: 90%; max-width: 400px; max-height: 90vh; border-radius: 12px; padding: 20px; overflow-y: auto; box-sizing: border-box; text-align: center; }
-    
-    /* その他（月選択、インコ等） */
-    .month-selector { display: flex; justify-content: center; align-items: center; gap: 10px; margin-bottom: 20px; background: white; padding: 12px; border-radius: 10px; }
-    .month-selector input { font-size: 16px; padding: 6px; }
-    input[type="file"] { display: none; }
-    #preview { max-width: 100%; max-height: 300px; border-radius: 8px; display: none; margin: 0 auto 15px auto; }
+    /* 月選択バー */
+    .month-selector {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 18px;
+      background: white;
+      padding: 12px;
+      border-radius: 10px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    }
+    .month-selector input[type="month"] {
+      font-size: 16px;
+      padding: 7px 10px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+    .btn-small {
+      padding: 8px 16px;
+      font-size: 14px;
+      font-weight: bold;
+      color: white;
+      background-color: #2b8cee;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    /* 履歴カード */
+    .record-card {
+      background: white;
+      border-radius: 10px;
+      padding: 12px 14px;
+      margin-bottom: 10px;
+      text-align: left;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .record-info {
+      flex: 1;
+      padding-right: 10px;
+    }
+    .record-date {
+      font-size: 12px;
+      color: #888;
+      margin-bottom: 4px;
+    }
+    .record-main {
+      font-weight: bold;
+      font-size: 15px;
+      margin-bottom: 5px;
+    }
+    .record-sub {
+      font-size: 12px;
+      color: #555;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .badge {
+      background: #e6f4ff;
+      color: #0050b3;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: bold;
+    }
+
+    /* 青いセキセイインコ＆吹き出しエリア */
+    .parakeet-box {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #ffffff;
+      border: 2px solid #bae0ff;
+      border-radius: 14px;
+      padding: 15px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 10px rgba(43, 140, 238, 0.08);
+    }
+    .parakeet-svg {
+      width: 85px;
+      height: 85px;
+      flex-shrink: 0;
+    }
+    .speech-bubble {
+      position: relative;
+      background: #e6f4ff;
+      border: 2px solid #2b8cee;
+      border-radius: 12px;
+      padding: 12px 15px;
+      margin-left: 15px;
+      text-align: left;
+      font-weight: bold;
+      color: #0050b3;
+      font-size: 14px;
+      line-height: 1.4;
+      flex: 1;
+    }
+    .speech-bubble::before {
+      content: "";
+      position: absolute;
+      left: -12px;
+      top: 50%;
+      transform: translateY(-50%);
+      border-width: 10px 12px 10px 0;
+      border-style: solid;
+      border-color: transparent #2b8cee transparent transparent;
+    }
+    .speech-bubble::after {
+      content: "";
+      position: absolute;
+      left: -9px;
+      top: 50%;
+      transform: translateY(-50%);
+      border-width: 8px 10px 8px 0;
+      border-style: solid;
+      border-color: transparent #e6f4ff transparent transparent;
+    }
+
+    /* カテゴリ別内訳カード */
+    .category-card {
+      background: white;
+      border-radius: 10px;
+      padding: 14px 16px;
+      margin-bottom: 12px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+      text-align: left;
+    }
+    .category-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .category-name {
+      font-weight: bold;
+      font-size: 16px;
+    }
+    .category-amount {
+      font-size: 14px;
+      font-weight: bold;
+    }
+    .progress-bg {
+      width: 100%;
+      height: 10px;
+      background-color: #eee;
+      border-radius: 5px;
+      overflow: hidden;
+      margin-bottom: 8px;
+    }
+    .progress-bar {
+      height: 100%;
+      background-color: #2b8cee;
+      border-radius: 5px;
+      transition: width 0.3s ease;
+    }
+    .progress-bar.over {
+      background-color: #ff4d4f;
+    }
+    .mini-parakeet-comment {
+      display: flex;
+      align-items: center;
+      margin-top: 6px;
+    }
+    .mini-bubble {
+      position: relative;
+      display: inline-block;
+      background: #f0f9ff;
+      border: 1.5px solid #36a3f7;
+      color: #0066cc;
+      font-size: 13px;
+      font-weight: bold;
+      padding: 4px 10px;
+      border-radius: 12px;
+      margin-left: 8px;
+    }
+    .mini-bubble.over {
+      background: #fff2f0;
+      border-color: #ffccc7;
+      color: #cf1322;
+    }
+
+    /* 予算設定行 */
+    .budget-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: white;
+      padding: 10px 14px;
+      margin-bottom: 8px;
+      border-radius: 8px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    .budget-row label {
+      font-weight: bold;
+      font-size: 15px;
+    }
+    .budget-row input {
+      width: 120px;
+      padding: 8px;
+      font-size: 16px;
+      text-align: right;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+
+    /* モーダル（ポップアップ編集画面） */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      z-index: 1000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-content {
+      background: #f0f7ff;
+      width: 92%;
+      max-width: 420px;
+      max-height: 90vh;
+      border-radius: 12px;
+      padding: 18px;
+      overflow-y: auto;
+      box-sizing: border-box;
+      text-align: center;
+    }
+    .btn-reset {
+      background: none;
+      border: 1px solid #999;
+      color: #666;
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-size: 14px;
+      cursor: pointer;
+      margin-top: 15px;
+    }
   </style>
 </head>
 <body>
 
   <header>🐦 インコ家計簿</header>
 
+  <!-- タブ切り替えボタン -->
   <div class="tabs">
     <button class="tab-btn active" onclick="switchTab('tab-camera', this)">📷 撮影</button>
     <button class="tab-btn" onclick="switchTab('tab-manual', this)">✍️ 手動登録</button>
     <button class="tab-btn" onclick="switchTab('tab-history', this)">📝 履歴・修正</button>
     <button class="tab-btn" onclick="switchTab('tab-summary', this)">📊 内訳</button>
-    <button class="tab-btn" onclick="switchTab('tab-budget', this)">⚙️ 設定</button>
+    <button class="tab-btn" onclick="switchTab('tab-budget', this)">⚙️ 予算・設定</button>
   </div>
 
   <div class="container">
 
     <!-- ==================== タブ1：レシート撮影 ==================== -->
     <div id="tab-camera" class="tab-content active">
+      <p style="font-size:13px; color:#666;">レシートを撮影するとAIが9つのカテゴリに自動仕分けします</p>
       <label for="cameraInput" class="btn">📷 カメラを起動</label>
       <input type="file" id="cameraInput" accept="image/*" capture="environment">
-      <div><img id="preview"></div>
+      <div><img id="preview" alt="プレビュー"></div>
       <div id="statusText" class="status-text"></div>
       <button id="sendBtn" class="btn btn-success" style="display: none;">✨ このレシートを読み取る</button>
     </div>
 
     <!-- ==================== タブ2：手動登録 ==================== -->
     <div id="tab-manual" class="tab-content">
-      <div class="form-group"><label>日付</label><input type="date" id="mDate"></div>
-      <div class="form-group"><label>店舗名</label><input type="text" id="mStore" placeholder="例: スーパーXX"></div>
-      <div class="form-group"><label>品目（商品名）</label><input type="text" id="mName" placeholder="例: 牛乳"></div>
-      <div class="form-group"><label>金額（税込）</label><input type="number" id="mPrice" placeholder="0"></div>
+      <p style="font-size:13px; color:#666;">レシートがない買い物を直接登録します</p>
+      <div class="form-group"><label>購入日</label><input type="date" id="mDate"></div>
+      <div class="form-group"><label>店舗名（任意）</label><input type="text" id="mStore" placeholder="例: ○○スーパー、○○病院、電車など"></div>
+      <div class="form-group"><label>品目（必須）</label><input type="text" id="mName" placeholder="例: 診察代、Suicaチャージ、電気代"></div>
+      <div class="form-group"><label>金額・税込（必須）</label><input type="number" id="mPrice" placeholder="0"></div>
       <div class="form-group">
         <label>カテゴリ</label>
-        <select id="mCategory">
-          <option>食費</option><option>お菓子</option><option>日用品</option>
-          <option>外食</option><option>娯楽費</option><option>その他</option>
-        </select>
+        <select id="mCategory"></select>
       </div>
-      <div class="form-group"><label>支払方法</label><input type="text" id="mPayment" placeholder="例: 現金、クレカ"></div>
-      <div class="form-group"><label>備考</label><input type="text" id="mNote"></div>
+      <div class="form-group"><label>支払方法（任意）</label><input type="text" id="mPayment" placeholder="例: 現金、クレジットカード、口座振替"></div>
+      <div class="form-group"><label>備考（任意）</label><input type="text" id="mNote"></div>
       
       <div id="manualStatus" class="status-text"></div>
-      <button id="manualSaveBtn" class="btn btn-success">💾 登録する</button>
+      <button id="manualSaveBtn" class="btn btn-success">💾 スプレッドシートに登録</button>
     </div>
 
     <!-- ==================== タブ3：履歴・修正 ==================== -->
     <div id="tab-history" class="tab-content">
       <div class="month-selector">
         <input type="month" id="histMonthPicker">
-        <button class="btn btn-success" style="width:auto; margin:0;" onclick="loadHistory()">表示</button>
+        <button class="btn-small" onclick="loadHistory()">表示</button>
       </div>
-      <div id="histStatus" class="status-text">月を選んで表示を押してね</div>
+      <div id="histStatus" class="status-text"></div>
       <div id="historyList"></div>
     </div>
 
@@ -104,214 +438,423 @@
     <div id="tab-summary" class="tab-content">
       <div class="month-selector">
         <input type="month" id="sumMonthPicker">
-        <button class="btn btn-success" style="width:auto; margin:0;" onclick="loadMonthlySummary()">表示</button>
+        <button class="btn-small" onclick="loadMonthlySummary()">表示</button>
       </div>
       <div id="summaryStatus" class="status-text"></div>
+
+      <!-- 青いセキセイインコのイラスト＆吹き出し -->
+      <div class="parakeet-box" id="parakeetBox" style="display:none;">
+        <svg class="parakeet-svg" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+          <path d="M40 95 L25 118 L48 105 Z" fill="#0050b3"/>
+          <ellipse cx="62" cy="72" rx="28" ry="34" fill="#36a3f7"/>
+          <ellipse cx="66" cy="76" rx="20" ry="26" fill="#69c0ff"/>
+          <path d="M42 55 C30 70, 38 92, 55 92 C48 78, 52 62, 42 55 Z" fill="#1890ff" stroke="#096dd9" stroke-width="2"/>
+          <circle cx="62" cy="38" r="24" fill="#ffffff"/>
+          <path d="M38 35 C38 15, 86 15, 86 35 C75 26, 50 26, 38 35 Z" fill="#36a3f7"/>
+          <ellipse cx="48" cy="46" rx="5" ry="7" fill="#1890ff"/>
+          <ellipse cx="78" cy="46" rx="5" ry="7" fill="#1890ff"/>
+          <circle cx="53" cy="52" r="2" fill="#222"/>
+          <circle cx="59" cy="54" r="2" fill="#222"/>
+          <circle cx="73" cy="52" r="2" fill="#222"/>
+          <circle cx="51" cy="36" r="4.5" fill="#111"/>
+          <circle cx="49.5" cy="34.5" r="1.5" fill="#fff"/>
+          <circle cx="75" cy="36" r="4.5" fill="#111"/>
+          <circle cx="73.5" cy="34.5" r="1.5" fill="#fff"/>
+          <ellipse cx="63" cy="36" rx="5" ry="2.5" fill="#69c0ff"/>
+          <path d="M58 38 Q63 50 68 38 Z" fill="#ffd666" stroke="#d48806" stroke-width="1"/>
+          <path d="M52 104 L48 112 M52 104 L54 112" stroke="#ff85c0" stroke-width="3" stroke-linecap="round"/>
+          <path d="M72 104 L68 112 M72 104 L74 112" stroke="#ff85c0" stroke-width="3" stroke-linecap="round"/>
+        </svg>
+        <div class="speech-bubble" id="mainParakeetSpeech">
+          月を選んで「表示」を押してねピヨ！
+        </div>
+      </div>
+
       <div id="categoryList"></div>
     </div>
 
-    <!-- ==================== タブ5：設定・予算 ==================== -->
+    <!-- ==================== タブ5：予算・設定 ==================== -->
     <div id="tab-budget" class="tab-content">
-      <p style="font-size:13px; color:#666;">カテゴリ別予算（円）</p>
-      <div id="budgetInputsArea">
-        <!-- JSで生成 -->
-      </div>
+      <p style="font-size:13px; color:#666;">1ヶ月あたりのカテゴリ別予算（円）</p>
+      <div id="budgetInputsArea"></div>
       <div id="budgetStatus" class="status-text"></div>
       <button class="btn btn-success" id="saveBudgetBtn">💾 予算を保存する</button>
-      <div style="margin-top:30px;"><button id="resetKeyBtn" class="btn" style="background:#888;">🔑 APIキー再設定</button></div>
+      <div style="border-top:1px solid #ddd; margin-top:20px; padding-top:10px;">
+        <button id="resetKeyBtn" class="btn-reset">🔑 Gemini APIキーを再設定する</button>
+      </div>
     </div>
 
   </div>
 
-  <!-- ==================== 編集用モーダル ==================== -->
+  <!-- ==================== 履歴修正用モーダル ==================== -->
   <div id="editModal" class="modal-overlay">
     <div class="modal-content">
-      <h3 style="margin-top:0;">内容の修正</h3>
+      <h3 style="margin-top:0; color:#2b8cee;">📝 登録内容の修正</h3>
       <input type="hidden" id="eRow">
-      <div class="form-group"><label>日付</label><input type="date" id="eDate"></div>
+      <div class="form-group"><label>購入日</label><input type="date" id="eDate"></div>
       <div class="form-group"><label>店舗名</label><input type="text" id="eStore"></div>
       <div class="form-group"><label>品目</label><input type="text" id="eName"></div>
-      <div class="form-group"><label>金額</label><input type="number" id="ePrice"></div>
+      <div class="form-group"><label>金額（税込）</label><input type="number" id="ePrice"></div>
       <div class="form-group">
         <label>カテゴリ</label>
-        <select id="eCategory">
-          <option>食費</option><option>お菓子</option><option>日用品</option>
-          <option>外食</option><option>娯楽費</option><option>その他</option>
-        </select>
+        <select id="eCategory"></select>
       </div>
       <div class="form-group"><label>支払方法</label><input type="text" id="ePayment"></div>
       <div class="form-group"><label>備考</label><input type="text" id="eNote"></div>
       
       <div id="editStatus" class="status-text"></div>
       <div style="display:flex; gap:10px;">
-        <button class="btn btn-success" onclick="saveEdit()">💾 保存</button>
-        <button class="btn" style="background:#888;" onclick="closeModal()">キャンセル</button>
+        <button class="btn btn-success" id="saveEditBtn" onclick="saveEdit()" style="margin:0;">💾 保存</button>
+        <button class="btn" style="background:#888; margin:0;" onclick="closeModal()">キャンセル</button>
       </div>
     </div>
   </div>
 
   <script>
     // ====================================================================
-    // ★ご自身のGASのURLに書き換えてください
+    // ★書き換え箇所1：ご自身のGASのウェブアプリURLに書き換えてください
     const GAS_URL = 'https://script.google.com/macros/s/AKfycbz9EFDt4li-cLJ8Om7VW8tW7vaSMUQIeqUDCq68b_HhuGdGDbK18K29SlKyo4LFgTUd/exec';
-    const GEMINI_MODELS = ['gemini-3.5-flash', 'gemini-2.5-flash'];
+
+    // ★書き換え箇所2：使用するモデルの優先順位リスト
+    const GEMINI_MODELS = [
+      'gemini-3.5-flash',
+      'gemini-2.5-flash',
+      'gemini-2.0-flash'
+    ];
     // ====================================================================
 
-    const CATEGORIES = ['食費', 'お菓子', '日用品', '外食', '娯楽費', 'その他'];
+    // カテゴリ定義（絵文字アイコン＆初期予算つき）
+    const CATEGORY_CONFIG = [
+      { name: '食費', icon: '🍎', defaultBudget: 25000 },
+      { name: 'お菓子', icon: '🍰', defaultBudget: 5000 },
+      { name: '日用品', icon: '🧻', defaultBudget: 10000 },
+      { name: '外食', icon: '🍽️', defaultBudget: 10000 },
+      { name: '交通費', icon: '🚃', defaultBudget: 5000 },
+      { name: '医療費', icon: '🏥', defaultBudget: 5000 },
+      { name: '光熱費', icon: '💡', defaultBudget: 15000 },
+      { name: '娯楽費', icon: '🎮', defaultBudget: 10000 },
+      { name: 'その他', icon: '📦', defaultBudget: 5000 }
+    ];
+    const CATEGORIES = CATEGORY_CONFIG.map(c => c.name);
 
-    // 初期化：今日の日付をセット
-    const todayStr = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
-    const thisMonthStr = todayStr.substring(0, 7); // YYYY-MM
+    // ミニインコSVG（各カテゴリ吹き出し用）
+    const MINI_PARAKEET_SVG = `
+      <svg width="28" height="28" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0;">
+        <circle cx="60" cy="60" r="54" fill="#e6f4ff" stroke="#36a3f7" stroke-width="4"/>
+        <circle cx="60" cy="55" r="34" fill="#ffffff"/>
+        <path d="M26 50 C26 15, 94 15, 94 50 C78 36, 42 36, 26 50 Z" fill="#36a3f7"/>
+        <ellipse cx="38" cy="65" rx="7" ry="9" fill="#1890ff"/>
+        <ellipse cx="82" cy="65" rx="7" ry="9" fill="#1890ff"/>
+        <circle cx="44" cy="52" r="6" fill="#111"/>
+        <circle cx="42" cy="50" r="2" fill="#fff"/>
+        <circle cx="76" cy="52" r="6" fill="#111"/>
+        <circle cx="74" cy="50" r="2" fill="#fff"/>
+        <ellipse cx="60" cy="52" rx="7" ry="3.5" fill="#69c0ff"/>
+        <path d="M53 55 Q60 72 67 55 Z" fill="#ffd666" stroke="#d48806" stroke-width="1.5"/>
+      </svg>
+    `;
+
+    // プルダウンと予算入力欄の自動生成
+    const mCategorySelect = document.getElementById('mCategory');
+    const eCategorySelect = document.getElementById('eCategory');
+    const budgetInputsArea = document.getElementById('budgetInputsArea');
+
+    CATEGORY_CONFIG.forEach(item => {
+      mCategorySelect.innerHTML += `<option value="${item.name}">${item.icon}${item.name}</option>`;
+      eCategorySelect.innerHTML += `<option value="${item.name}">${item.icon}${item.name}</option>`;
+      budgetInputsArea.innerHTML += `
+        <div class="budget-row">
+          <label>${item.icon}${item.name}</label>
+          <input type="number" id="budget-${item.name}" value="${item.defaultBudget}" step="1000">
+        </div>
+      `;
+    });
+
+    // 現在の日付・年月を取得（ローカル時間基準）
+    function getTodayParts() {
+      const now = new Date();
+      const y = now.getFullYear();
+      const m = ('0' + (now.getMonth() + 1)).slice(-2);
+      const d = ('0' + now.getDate()).slice(-2);
+      return { today: `${y}-${m}-${d}`, month: `${y}-${m}` };
+    }
+
+    const { today: todayStr, month: thisMonthStr } = getTodayParts();
     document.getElementById('mDate').value = todayStr;
     document.getElementById('sumMonthPicker').value = thisMonthStr;
     document.getElementById('histMonthPicker').value = thisMonthStr;
 
-    // 予算入力欄の生成
-    const budgetArea = document.getElementById('budgetInputsArea');
-    CATEGORIES.forEach(cat => {
-      budgetArea.innerHTML += `
-        <div class="form-group" style="display:flex; align-items:center; gap:10px;">
-          <label style="width:80px; margin:0;">${cat}</label>
-          <input type="number" id="budget-${cat}" value="0">
-        </div>`;
-    });
-
-    // タブ切り替え
+    // タブ切り替え処理
     function switchTab(tabId, btnElement) {
       document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
       document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
       document.getElementById(tabId).classList.add('active');
       btnElement.classList.add('active');
-      
+
       if (tabId === 'tab-summary') loadMonthlySummary();
       if (tabId === 'tab-history') loadHistory();
     }
 
-    // ==================== [1] レシート撮影（Gemini API）====================
-    // ※「お菓子」をAIのプロンプトに追加済み
-    const sendBtn = document.getElementById('sendBtn');
-    const preview = document.getElementById('preview');
-    let base64Data = '';
+    // APIキー再設定
+    document.getElementById('resetKeyBtn').addEventListener('click', () => {
+      const currentKey = localStorage.getItem('gemini_api_key') || '';
+      const newKey = prompt('新しいGemini APIキーを入力してください\n（空欄でOKを押すと削除されます）', currentKey);
+      if (newKey !== null) {
+        if (newKey.trim() === '') {
+          localStorage.removeItem('gemini_api_key');
+          alert('APIキーを削除しました。');
+        } else {
+          localStorage.setItem('gemini_api_key', newKey.trim());
+          alert('新しいAPIキーを保存しました。');
+        }
+      }
+    });
 
-    document.getElementById('cameraInput').addEventListener('change', (e) => {
-      const file = e.target.files[0];
+    // ==================== 1. レシート撮影・AI読み取り ====================
+    const cameraInput = document.getElementById('cameraInput');
+    const preview = document.getElementById('preview');
+    const sendBtn = document.getElementById('sendBtn');
+    const statusText = document.getElementById('statusText');
+    let compressedBase64Data = '';
+
+    function compressImage(file, callback) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const MAX_SIZE = 1200;
+          let width = img.width;
+          let height = img.height;
+          if (width > height && width > MAX_SIZE) {
+            height *= MAX_SIZE / width;
+            width = MAX_SIZE;
+          } else if (height > MAX_SIZE) {
+            width *= MAX_SIZE / height;
+            height = MAX_SIZE;
+          }
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+          callback(canvas.toDataURL('image/jpeg', 0.8));
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    cameraInput.addEventListener('change', (event) => {
+      const file = event.target.files[0];
       if (!file) return;
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-      const img = new Image();
-      img.onload = () => {
-        canvas.width = 800;
-        canvas.height = img.height * (800 / img.width);
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+      statusText.innerText = '画像を最適化中...';
+      compressImage(file, (dataUrl) => {
         preview.src = dataUrl;
         preview.style.display = 'block';
-        base64Data = dataUrl.split(',')[1];
-        sendBtn.style.display = 'block';
-      };
-      img.src = URL.createObjectURL(file);
+        compressedBase64Data = dataUrl.split(',')[1];
+        statusText.innerText = '';
+        sendBtn.style.display = 'inline-block';
+      });
     });
+
+    const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+    async function callGeminiWithFallback(apiKey, requestBody) {
+      let lastError = null;
+      for (const model of GEMINI_MODELS) {
+        for (let attempt = 1; attempt <= 2; attempt++) {
+          statusText.innerText = `AI解析中... (${model}${attempt > 1 ? ' 再試行中' : ''})`;
+          const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(requestBody)
+          });
+          const data = await res.json();
+          if (res.ok) return data;
+          lastError = `Google APIエラー (${res.status}):\n${data.error?.message || '不明なエラー'}`;
+          if (res.status === 503 || res.status === 429) {
+            await sleep(2000);
+            continue;
+          } else if (res.status === 404) {
+            break;
+          } else {
+            throw new Error(lastError);
+          }
+        }
+      }
+      throw new Error(`すべてのモデルが混雑しているか利用できません。\n${lastError}`);
+    }
 
     sendBtn.addEventListener('click', async () => {
-      let apiKey = localStorage.getItem('gemini_api_key') || prompt('Gemini APIキーを入力');
-      if (!apiKey) return;
-      localStorage.setItem('gemini_api_key', apiKey.trim());
-      
-      sendBtn.disabled = true; sendBtn.innerText = 'AI解析中...';
+      let apiKey = localStorage.getItem('gemini_api_key');
+      if (!apiKey) {
+        apiKey = prompt('Gemini APIキーを入力してください');
+        if (!apiKey) return;
+        localStorage.setItem('gemini_api_key', apiKey.trim());
+      }
+
+      sendBtn.innerText = '処理中...';
+      sendBtn.disabled = true;
+
       try {
-        const promptText = `レシートから以下を抽出しJSONのみで返答して。
-{"date":"YYYY/MM/DD", "store":"店舗名", "payment":"支払方法", "items":[{"name":"品名", "price":100, "category":"食費"}]}
-※カテゴリは「食費」「お菓子」「日用品」「外食」「娯楽費」「その他」から判断。`;
-        
-        // （省略：前回のAPI呼び出しと同じコードでGASへ送信）
-        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODELS[0]}:generateContent?key=${apiKey}`, {
-          method: 'POST', headers: {'Content-Type':'application/json'},
-          body: JSON.stringify({ contents: [{ parts: [{text: promptText}, {inline_data: {mime_type:"image/jpeg", data:base64Data}}]}] })
+        const promptText = `このレシート・領収書・検針票の画像から以下の情報を抽出し、指定のJSON形式のみで出力してください。
+マークダウン（\`\`\`json など）は絶対に含めず、{ から始まる純粋なJSON文字列のみを返してください。
+・購入日（YYYY/MM/DD形式）
+・店舗名
+・支払方法（現金、クレジットカード、電子マネーなど）
+・各品目（商品名、金額、カテゴリ）
+※カテゴリは「食費」「お菓子」「日用品」「外食」「交通費」「医療費」「光熱費」「娯楽費」「その他」の9つからAIが判断して分類してください。
+
+【出力するJSONの形式】
+{
+  "date": "2026/10/17",
+  "store": "店舗名",
+  "payment": "支払方法",
+  "items": [
+    { "name": "品目名1", "price": 100, "category": "食費", "note": "" }
+  ]
+}`;
+
+        const requestBody = {
+          contents: [{
+            parts: [
+              { text: promptText },
+              { inline_data: { mime_type: "image/jpeg", data: compressedBase64Data } }
+            ]
+          }]
+        };
+
+        const geminiData = await callGeminiWithFallback(apiKey, requestBody);
+        let responseText = geminiData.candidates[0].content.parts[0].text;
+        responseText = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
+        const parsedJson = JSON.parse(responseText);
+        parsedJson.action = 'add_receipt';
+
+        statusText.innerText = 'スプレッドシートに書き込み中...';
+
+        const gasRes = await fetch(GAS_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain' },
+          body: JSON.stringify(parsedJson)
         });
-        const data = await res.json();
-        let jsonStr = data.candidates[0].content.parts[0].text.replace(/```json|```/g, '').trim();
-        let payload = JSON.parse(jsonStr);
-        payload.action = 'add_receipt';
-        
-        await fetch(GAS_URL, { method: 'POST', body: JSON.stringify(payload) });
-        alert('記録しました！');
-        preview.style.display = 'none'; sendBtn.style.display = 'none';
-      } catch (e) { alert('エラー: ' + e.message); }
-      sendBtn.disabled = false; sendBtn.innerText = '✨ このレシートを読み取る';
+        const gasResult = await gasRes.json();
+
+        if (gasResult.status === 'success') {
+          alert('家計簿に記録しました！\n（' + gasResult.message + '）');
+          preview.style.display = 'none';
+          sendBtn.style.display = 'none';
+          statusText.innerText = '';
+          cameraInput.value = '';
+        } else {
+          throw new Error(gasResult.message);
+        }
+      } catch (error) {
+        alert('【エラー詳細】\n' + error.message);
+        statusText.innerText = '';
+      } finally {
+        sendBtn.innerText = '✨ このレシートを読み取る';
+        sendBtn.disabled = false;
+      }
     });
 
-
-    // ==================== [2] 手動登録 ====================
+    // ==================== 2. 手動登録処理 ====================
     document.getElementById('manualSaveBtn').addEventListener('click', async () => {
       const btn = document.getElementById('manualSaveBtn');
       const status = document.getElementById('manualStatus');
-      
+      const nameVal = document.getElementById('mName').value.trim();
+      const priceVal = document.getElementById('mPrice').value;
+
+      if (!nameVal || priceVal === '') {
+        alert('「品目」と「金額」を入力してください。');
+        return;
+      }
+
       const payload = {
         action: 'add_receipt',
-        date: document.getElementById('mDate').value.replace(/-/g, '/'), // YYYY/MM/DD形式に統一
-        store: document.getElementById('mStore').value,
-        payment: document.getElementById('mPayment').value,
+        date: document.getElementById('mDate').value.replace(/-/g, '/'),
+        store: document.getElementById('mStore').value.trim(),
+        payment: document.getElementById('mPayment').value.trim(),
         items: [{
-          name: document.getElementById('mName').value,
-          price: document.getElementById('mPrice').value,
+          name: nameVal,
+          price: Number(priceVal),
           category: document.getElementById('mCategory').value,
-          note: document.getElementById('mNote').value
+          note: document.getElementById('mNote').value.trim()
         }]
       };
 
-      if (!payload.items[0].name || !payload.items[0].price) {
-        alert('品目と金額は必須です。'); return;
-      }
+      btn.disabled = true;
+      status.innerText = 'スプレッドシートに送信中...';
 
-      btn.disabled = true; status.innerText = '送信中...';
       try {
-        await fetch(GAS_URL, { method: 'POST', body: JSON.stringify(payload) });
-        status.innerText = '';
-        alert('手動登録が完了しました！');
-        // 入力欄をリセット（日付・店舗・支払方法は連続入力のために残すのがおすすめ）
-        document.getElementById('mName').value = '';
-        document.getElementById('mPrice').value = '';
+        const res = await fetch(GAS_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (data.status === 'success') {
+          alert('手動登録が完了しました！');
+          status.innerText = '';
+          document.getElementById('mName').value = '';
+          document.getElementById('mPrice').value = '';
+          document.getElementById('mNote').value = '';
+        } else {
+          throw new Error(data.message);
+        }
       } catch (e) {
-        status.innerText = 'エラー: ' + e.message;
+        alert('エラー: ' + e.message);
+        status.innerText = '';
+      } finally {
+        btn.disabled = false;
       }
-      btn.disabled = false;
     });
 
-
-    // ==================== [3] 履歴・修正 ====================
+    // ==================== 3. 履歴表示・個別修正 ====================
     async function loadHistory() {
       const month = document.getElementById('histMonthPicker').value;
       const status = document.getElementById('histStatus');
       const list = document.getElementById('historyList');
       
-      list.innerHTML = ''; status.innerText = '履歴を取得中...';
+      list.innerHTML = '';
+      status.innerText = '履歴を取得中...';
+
       try {
-        const res = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: 'get_records', month: month }) });
+        const res = await fetch(GAS_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain' },
+          body: JSON.stringify({ action: 'get_records', month: month })
+        });
         const data = await res.json();
-        
-        if (data.records.length === 0) {
-          status.innerText = 'この月のデータはありません。'; return;
+
+        if (data.status !== 'success') throw new Error(data.message);
+        if (!data.records || data.records.length === 0) {
+          status.innerText = 'この月の登録データはありません。';
+          return;
         }
-        status.innerText = '';
-        
+        status.innerText = `${data.records.length}件のデータが見つかりました`;
+
+        let html = '';
         data.records.forEach(rec => {
-          // recオブジェクトを文字列化してボタンに埋め込む
           const recJson = encodeURIComponent(JSON.stringify(rec));
-          list.innerHTML += `
+          html += `
             <div class="record-card">
               <div class="record-info">
-                <div class="record-date">${rec.date} ｜ ${rec.store}</div>
-                <div class="record-main">${rec.name} <span style="color:#2b8cee;">${rec.price}円</span></div>
+                <div class="record-date">${rec.date} ｜ ${rec.store || '店舗未入力'}</div>
+                <div class="record-main">${rec.name} <span style="color:#2b8cee;">${Number(rec.price).toLocaleString()}円</span></div>
                 <div class="record-sub">
                   <span class="badge">${rec.category}</span>
-                  <span class="badge" style="background:#eee;color:#555;">${rec.payment}</span>
+                  ${rec.payment ? `<span class="badge" style="background:#eee;color:#555;">${rec.payment}</span>` : ''}
+                  ${rec.note ? `<span style="color:#888;">📝 ${rec.note}</span>` : ''}
                 </div>
               </div>
               <button class="btn btn-edit" onclick="openEditModal('${recJson}')">修正</button>
             </div>
           `;
         });
-      } catch (e) { status.innerText = 'エラー: ' + e.message; }
+        list.innerHTML = html;
+      } catch (e) {
+        status.innerText = 'エラー: ' + e.message;
+      }
     }
 
     function openEditModal(recJsonStr) {
@@ -321,12 +864,12 @@
       document.getElementById('eStore').value = rec.store;
       document.getElementById('eName').value = rec.name;
       document.getElementById('ePrice').value = rec.price;
-      document.getElementById('eCategory').value = rec.category;
+      document.getElementById('eCategory').value = CATEGORIES.includes(rec.category) ? rec.category : 'その他';
       document.getElementById('ePayment').value = rec.payment;
       document.getElementById('eNote').value = rec.note;
       
-      document.getElementById('editModal').style.display = 'flex';
       document.getElementById('editStatus').innerText = '';
+      document.getElementById('editModal').style.display = 'flex';
     }
 
     function closeModal() {
@@ -334,83 +877,189 @@
     }
 
     async function saveEdit() {
+      const btn = document.getElementById('saveEditBtn');
       const status = document.getElementById('editStatus');
       const payload = {
         action: 'update_record',
-        row: document.getElementById('eRow').value,
+        row: Number(document.getElementById('eRow').value),
         date: document.getElementById('eDate').value.replace(/-/g, '/'),
-        store: document.getElementById('eStore').value,
-        name: document.getElementById('eName').value,
-        price: document.getElementById('ePrice').value,
+        store: document.getElementById('eStore').value.trim(),
+        name: document.getElementById('eName').value.trim(),
+        price: Number(document.getElementById('ePrice').value) || 0,
         category: document.getElementById('eCategory').value,
-        payment: document.getElementById('ePayment').value,
-        note: document.getElementById('eNote').value
+        payment: document.getElementById('ePayment').value.trim(),
+        note: document.getElementById('eNote').value.trim()
       };
 
-      status.innerText = '上書き保存中...';
+      btn.disabled = true;
+      status.innerText = 'スプレッドシートを上書き中...';
+
       try {
-        await fetch(GAS_URL, { method: 'POST', body: JSON.stringify(payload) });
-        alert('データを修正しました！');
-        closeModal();
-        loadHistory(); // 履歴リストを再読み込みして表示を更新
+        const res = await fetch(GAS_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (data.status === 'success') {
+          alert('データを修正しました！');
+          closeModal();
+          loadHistory();
+        } else {
+          throw new Error(data.message);
+        }
       } catch (e) {
         status.innerText = 'エラー: ' + e.message;
+      } finally {
+        btn.disabled = false;
       }
     }
 
-
-    // ==================== [4] 内訳・予算保存 (前回の機能を引き継ぎ) ====================
+    // ==================== 4. 月別内訳＆青いセキセイインコの応援表示 ====================
     async function loadMonthlySummary() {
-      const month = document.getElementById('sumMonthPicker').value;
-      const status = document.getElementById('summaryStatus');
-      const list = document.getElementById('categoryList');
-      
-      list.innerHTML = ''; status.innerText = '集計中...';
-      try {
-        const res = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: 'get_summary', month: month }) });
-        const data = await res.json();
-        status.innerText = '';
-        
-        let html = '';
-        CATEGORIES.forEach(cat => {
-          const spent = data.summary[cat] || 0;
-          const budget = data.budgets[cat] || 0;
-          
-          // 予算入力欄も最新データで更新
-          if (document.getElementById(`budget-${cat}`)) {
-            document.getElementById(`budget-${cat}`).value = budget;
-          }
+      const selectedMonth = document.getElementById('sumMonthPicker').value;
+      const summaryStatus = document.getElementById('summaryStatus');
+      const categoryList = document.getElementById('categoryList');
+      const parakeetBox = document.getElementById('parakeetBox');
 
-          html += `
-            <div class="record-card" style="display:block;">
-              <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
-                <b>${cat}</b> <span>${spent.toLocaleString()} / ${budget.toLocaleString()}円</span>
-              </div>
-              <div style="width:100%; height:8px; background:#eee; border-radius:4px;">
-                <div style="height:100%; background:${spent > budget ? '#ff4d4f' : '#2b8cee'}; border-radius:4px; width:${budget ? Math.min(100, (spent/budget)*100) : 0}%;"></div>
-              </div>
-            </div>`;
+      if (!selectedMonth) return;
+
+      summaryStatus.innerText = '集計データを取得中...';
+      categoryList.innerHTML = '';
+      parakeetBox.style.display = 'none';
+
+      try {
+        const res = await fetch(GAS_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain' },
+          body: JSON.stringify({ action: 'get_summary', month: selectedMonth })
         });
-        list.innerHTML = html;
-      } catch (e) { status.innerText = 'エラー: ' + e.message; }
+        const data = await res.json();
+
+        if (data.status !== 'success') throw new Error(data.message);
+
+        summaryStatus.innerText = '';
+        renderSummaryAndParakeet(selectedMonth, data.summary, data.budgets);
+
+        // 予算設定タブの数値も同期
+        CATEGORIES.forEach(cat => {
+          const input = document.getElementById(`budget-${cat}`);
+          if (input && data.budgets[cat] !== undefined) {
+            input.value = data.budgets[cat];
+          }
+        });
+      } catch (err) {
+        summaryStatus.innerText = 'エラー: ' + err.message;
+      }
     }
 
+    function renderSummaryAndParakeet(selectedMonth, summary, budgets) {
+      const currentMonth = getTodayParts().month;
+      const isCurrentMonth = (selectedMonth === currentMonth);
+      const isPastMonth = (selectedMonth < currentMonth);
+
+      // 当月なら「いい調子！」、当月より前なら「よくやった！」
+      const praiseWord = isCurrentMonth ? 'いい調子！' : (isPastMonth ? 'よくやった！' : 'いい調子！');
+
+      let totalSpent = 0;
+      let totalBudget = 0;
+      let html = '';
+
+      CATEGORY_CONFIG.forEach(item => {
+        const cat = item.name;
+        const spent = Number(summary[cat]) || 0;
+        const budget = Number(budgets[cat]) || 0;
+        totalSpent += spent;
+        totalBudget += budget;
+
+        const isUnderBudget = (budget > 0 && spent < budget);
+        const percent = budget > 0 ? Math.min(100, Math.round((spent / budget) * 100)) : 0;
+
+        let commentHtml = '';
+        if (budget > 0) {
+          if (isUnderBudget) {
+            commentHtml = `
+              <div class="mini-parakeet-comment">
+                ${MINI_PARAKEET_SVG}
+                <div class="mini-bubble">${praiseWord}（残り ${(budget - spent).toLocaleString()}円）</div>
+              </div>
+            `;
+          } else {
+            commentHtml = `
+              <div class="mini-parakeet-comment">
+                ${MINI_PARAKEET_SVG}
+                <div class="mini-bubble over">予算オーバー💦（+${(spent - budget).toLocaleString()}円）</div>
+              </div>
+            `;
+          }
+        }
+
+        html += `
+          <div class="category-card">
+            <div class="category-header">
+              <span class="category-name">${item.icon} ${cat}</span>
+              <span class="category-amount">${spent.toLocaleString()}円 / 予算 ${budget.toLocaleString()}円</span>
+            </div>
+            <div class="progress-bg">
+              <div class="progress-bar ${isUnderBudget ? '' : 'over'}" style="width: ${percent}%;"></div>
+            </div>
+            ${commentHtml}
+          </div>
+        `;
+      });
+
+      document.getElementById('categoryList').innerHTML = html;
+
+      const parakeetBox = document.getElementById('parakeetBox');
+      const mainSpeech = document.getElementById('mainParakeetSpeech');
+      parakeetBox.style.display = 'flex';
+
+      if (totalSpent < totalBudget) {
+        if (isCurrentMonth) {
+          mainSpeech.innerHTML = `<strong>「いい調子！」</strong><br>今月の合計は ${totalSpent.toLocaleString()}円（総予算 ${totalBudget.toLocaleString()}円）。このペースで頑張ろう♪`;
+        } else if (isPastMonth) {
+          mainSpeech.innerHTML = `<strong>「よくやった！」</strong><br>${selectedMonth} の合計は ${totalSpent.toLocaleString()}円！総予算内にしっかり収めたね✨`;
+        } else {
+          mainSpeech.innerHTML = `<strong>「いい調子！」</strong><br>合計 ${totalSpent.toLocaleString()}円 / 総予算 ${totalBudget.toLocaleString()}円 だよ♪`;
+        }
+      } else {
+        mainSpeech.innerHTML = `合計 ${totalSpent.toLocaleString()}円（総予算 ${totalBudget.toLocaleString()}円）で予算を超えちゃった💦 内訳を見直してみよう！`;
+      }
+    }
+
+    // ==================== 5. 予算の保存処理 ====================
     document.getElementById('saveBudgetBtn').addEventListener('click', async () => {
       const btn = document.getElementById('saveBudgetBtn');
       const status = document.getElementById('budgetStatus');
-      
       const budgets = {};
-      CATEGORIES.forEach(cat => { budgets[cat] = document.getElementById(`budget-${cat}`).value; });
-      
-      btn.disabled = true; status.innerText = '保存中...';
-      try {
-        await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: 'save_budgets', budgets: budgets }) });
-        alert('予算を保存しました！');
-        status.innerText = '';
-      } catch (e) { status.innerText = 'エラー: ' + e.message; }
-      btn.disabled = false;
-    });
 
+      CATEGORIES.forEach(cat => {
+        budgets[cat] = Number(document.getElementById(`budget-${cat}`).value) || 0;
+      });
+
+      btn.disabled = true;
+      status.innerText = '予算を保存中...';
+
+      try {
+        const res = await fetch(GAS_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain' },
+          body: JSON.stringify({ action: 'save_budgets', budgets: budgets })
+        });
+        const data = await res.json();
+        if (data.status === 'success') {
+          alert('9カテゴリの予算を保存しました！');
+          status.innerText = '';
+        } else {
+          throw new Error(data.message);
+        }
+      } catch (e) {
+        alert('保存エラー: ' + e.message);
+        status.innerText = '';
+      } finally {
+        btn.disabled = false;
+      }
+    });
   </script>
 </body>
 </html>
